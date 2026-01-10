@@ -1,50 +1,94 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/sections/Footer";
-import { Globe, Zap, Heart } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Globe, Zap, Heart, Code2, Users, ShieldCheck, Terminal, Server } from "lucide-react";
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col font-sans">
       <Header />
-      <main className="flex-1 py-12 md:py-16 px-4">
-        <div className="container max-w-3xl mx-auto">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-4">About Doofs</h1>
-          <p className="text-base sm:text-lg text-muted-foreground mb-8 md:mb-12">
-            Free subdomains for Filipino developers and beyond.
-          </p>
-          
-          <div className="space-y-8 md:space-y-12">
-            <section>
-              <h2 className="text-lg sm:text-xl font-semibold mb-3 md:mb-4 flex items-center gap-2">
-                <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-                Our Mission
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Doofs was created to remove barriers for developers. We believe everyone should be able to launch their projects with a professional domain—without worrying about costs. Whether you're building a portfolio, testing an API, or launching an MVP, we've got you covered.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg sm:text-xl font-semibold mb-3 md:mb-4 flex items-center gap-2">
-                <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-accent flex-shrink-0" />
-                How It Works
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Simply authenticate with GitHub, choose your subdomain, and configure your DNS records. It's that simple. You get full control over A, AAAA, CNAME, TXT, and MX records for your subdomain.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg sm:text-xl font-semibold mb-3 md:mb-4 flex items-center gap-2">
-                <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-destructive flex-shrink-0" />
-                Made in the Philippines
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Doofs is proudly built by Filipino developers, for the global developer community. Our brand colors are inspired by the Philippine flag—representing our roots and the vibrant tech community we're part of.
-              </p>
-            </section>
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="py-20 px-4 text-center bg-gradient-to-b from-background to-muted/20 border-b">
+          <div className="container max-w-4xl mx-auto">
+            <Badge variant="secondary" className="mb-4">EST. 2025</Badge>
+            <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
+              For Developers, <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
+                By Developers.
+              </span>
+            </h1>
+            <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+              Doofs.tech is a community-driven initiative providing free subdomains to help you showcase your projects to the world.
+            </p>
           </div>
-        </div>
+        </section>
+
+        {/* Mission & Values */}
+        <section className="py-20 px-4">
+          <div className="container max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-8">
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="pt-6">
+                  <div className="h-12 w-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4">
+                    <Globe className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Global Access</h3>
+                  <p className="text-muted-foreground">
+                    We believe every developer, regardless of location or budget, deserves a professional presence on the web.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="pt-6">
+                  <div className="h-12 w-12 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-600 dark:text-yellow-400 mb-4">
+                    <Zap className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Zero Friction</h3>
+                  <p className="text-muted-foreground">
+                    No credit cards, no hidden fees, no complex setups. Just sign in with GitHub and claim your domain in seconds.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="pt-6">
+                  <div className="h-12 w-12 rounded-lg bg-red-500/10 flex items-center justify-center text-red-600 dark:text-red-400 mb-4">
+                    <Heart className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Community First</h3>
+                  <p className="text-muted-foreground">
+                    Proudly built by the Filipino open-source community, focused on empowering the next generation of builders.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+
+
+        {/* FAQ - Why Free? */}
+        <section className="py-20 px-4">
+          <div className="container max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold mb-8 text-center">Why is this free?</h2>
+            <div className="space-y-6">
+              <div className="p-6 rounded-xl border bg-card">
+                <h3 className="font-semibold text-lg mb-2">Is there a catch?</h3>
+                <p className="text-muted-foreground">
+                  No. We run this service with minimal overhead thanks to generous free tiers from our infrastructure providers and community sponsors. Our goal isn't profit—it's enablement.
+                </p>
+              </div>
+              <div className="p-6 rounded-xl border bg-card">
+                <h3 className="font-semibold text-lg mb-2">Who maintains this?</h3>
+                <p className="text-muted-foreground">
+                  Doofs.tech is maintained by a dedicated group of contributors. We are open about our operations and committed to longevity.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
       <Footer />
     </div>

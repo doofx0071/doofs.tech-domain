@@ -1,5 +1,32 @@
 const SUBDOMAIN_RE = /^[a-z0-9-]+$/;
-const RESERVED = new Set(["www", "mail", "admin", "support", "api", "docs", "cdn"]);
+const RESERVED = new Set([
+    // System & Auth
+    "admin", "administrator", "api", "app", "auth", "beta", "cache", "cdn", "code", "config", "console",
+    "dashboard", "data", "database", "db", "dev", "developer", "developers", "docs", "documentation",
+    "files", "git", "graphql", "host", "internal", "local", "localhost", "login", "logout", "logs",
+    "manage", "management", "monitor", "oauth", "ops", "panel", "portal", "prod", "production",
+    "profile", "public", "register", "registration", "remote", "rest", "root", "search", "secure",
+    "server", "service", "services", "setting", "settings", "signin", "signup", "site", "source",
+    "stage", "staging", "static", "stats", "status", "sys", "system", "test", "tests", "tmp",
+    "tool", "tools", "update", "updates", "upload", "user", "users", "v1", "v2", "video", "videos",
+    "vpn", "web", "www", "xml",
+
+    // Infrastructure & Email
+    "ftp", "imap", "mail", "mailgun", "mx", "ns", "ns1", "ns2", "ns3", "ns4", "pop", "pop3", "smtp",
+    "ssl", "tls", "webmail",
+
+    // Business & Platform
+    "about", "account", "billing", "blog", "careers", "community", "contact", "enterprise", "faq",
+    "features", "forum", "help", "home", "info", "invite", "job", "jobs", "join", "legal", "live",
+    "marketing", "news", "page", "pages", "payment", "payments", "plans", "pricing", "privacy",
+    "product", "sales", "shop", "store", "support", "team", "terms",
+
+    // Brand/Project Protection
+    "doofs", "convex", "vercel", "github", "netlify", "cloudflare", "aws", "azure", "google",
+
+    // Generic
+    "demo", "example", "none", "null", "undefined", "void"
+]);
 
 export function validateSubdomainLabel(label: string) {
     const s = label.trim().toLowerCase();

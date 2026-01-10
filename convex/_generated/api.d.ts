@@ -11,6 +11,7 @@
 import type * as admin from "../admin.js";
 import type * as auditLogs from "../auditLogs.js";
 import type * as auth from "../auth.js";
+import type * as contact from "../contact.js";
 import type * as crons from "../crons.js";
 import type * as dns from "../dns.js";
 import type * as dnsJobs from "../dnsJobs.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   auditLogs: typeof auditLogs;
   auth: typeof auth;
+  contact: typeof contact;
   crons: typeof crons;
   dns: typeof dns;
   dnsJobs: typeof dnsJobs;

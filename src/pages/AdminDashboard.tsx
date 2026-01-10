@@ -7,6 +7,7 @@ import { AdminSubdomains } from "../components/admin/AdminSubdomains";
 import { AdminDomains } from "../components/admin/AdminDomains";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { AdminAuditLogs } from "@/components/admin/AdminAuditLogs";
+import { AdminMessages } from "@/components/admin/AdminMessages";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
@@ -66,6 +67,7 @@ const AdminDashboard = () => {
                 <Route path="subdomains" element={<AdminSubdomains />} />
                 <Route path="domains" element={<AdminDomains />} />
                 <Route path="analytics" element={<AdminAnalytics />} />
+                <Route path="messages" element={<AdminMessages />} />
                 <Route path="logs" element={<AdminAuditLogs />} />
               </Routes>
             </main>

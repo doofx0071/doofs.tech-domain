@@ -146,6 +146,20 @@ const schema = defineSchema({
     .index("by_nextRunAt", ["nextRunAt"])
     .index("by_domain", ["domainId"]),
 
+  // Contact Messages
+  messages: defineTable({
+    name: v.string(),
+    email: v.string(),
+    subject: v.string(),
+    message: v.string(),
+    userId: v.optional(v.id("users")), // If authenticated
+    status: v.union(v.literal("unread"), v.literal("read"), v.literal("replied")),
+    readAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_created", ["createdAt"]),
+
   // Rate Limits (Optional but recommended)
   rate_limits: defineTable({
     userId: v.id("users"),

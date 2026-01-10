@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Globe, BarChart3, Settings, HelpCircle, LogOut, FileText } from "lucide-react";
+import { LayoutDashboard, Users, Globe, BarChart3, Settings, HelpCircle, LogOut, FileText, MessageSquare } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import {
   Sidebar,
@@ -23,6 +23,7 @@ const menuItems = [
   { title: "Domain Management", url: `${adminRoute}/dashboard/domains`, icon: Globe },
   { title: "Subdomain Management", url: `${adminRoute}/dashboard/subdomains`, icon: Globe },
   { title: "Analytics", url: `${adminRoute}/dashboard/analytics`, icon: BarChart3 },
+  { title: "Messages", url: `${adminRoute}/dashboard/messages`, icon: MessageSquare },
   { title: "Audit Logs", url: `${adminRoute}/dashboard/logs`, icon: FileText },
 ];
 

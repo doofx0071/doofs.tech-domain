@@ -15,9 +15,12 @@ export const checkAvailability = query({
     handler: async (ctx, args) => {
         const rootDomain = (args.rootDomain ?? "doofs.tech").toLowerCase();
 
-        // Basic format check
-        const subdomainRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
-        if (!subdomainRegex.test(args.subdomain)) {
+        // Validate format and reserved words
+        try {
+            validateSubdomainLabel(args.subdomain);
+        } catch (e: any) {
+            const msg = e.message || "Invalid";
+            if (msg.includes("reserved")) return { available: false, reason: "Reserved" };
             return { available: false, reason: "Invalid format" };
         }
 

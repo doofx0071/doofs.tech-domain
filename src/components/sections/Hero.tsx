@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Check, Loader2, X } from "lucide-react";
+import { ArrowRight, Check, Loader2, X, TriangleAlert } from "lucide-react";
 import { useConvex, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,7 @@ import {
 
 export const Hero = () => {
   const [subdomain, setSubdomain] = useState("");
-  const [status, setStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [status, setStatus] = useState<"idle" | "checking" | "available" | "taken" | "restricted">("idle");
   const [reason, setReason] = useState("");
   const [selectedDomain, setSelectedDomain] = useState("doofs.tech");
 
@@ -60,9 +60,13 @@ export const Hero = () => {
       if (result.available) {
         setStatus("available");
       } else {
-        setStatus("taken");
-        setReason(result.reason || "Unavailable");
-        // Reset to idle after a bit so they can try again or just let them edit
+        if (result.reason === "Reserved") {
+          setStatus("restricted");
+          setReason("This name is reserved.");
+        } else {
+          setStatus("taken");
+          setReason(result.reason || "Unavailable");
+        }
       }
     } catch (err) {
       setStatus("taken");
@@ -153,7 +157,9 @@ export const Hero = () => {
                   ? "bg-green-600 hover:bg-green-700 text-white"
                   : status === "taken"
                     ? "bg-destructive hover:bg-destructive/90 text-white"
-                    : "bg-accent text-accent-foreground hover:bg-accent/90"
+                    : status === "restricted"
+                      ? "bg-orange-500 hover:bg-orange-600 text-white"
+                      : "bg-accent text-accent-foreground hover:bg-accent/90"
                   }`}
                 disabled={status === "checking" || !subdomain}
               >
@@ -172,6 +178,11 @@ export const Hero = () => {
                   <>
                     <X className="h-3 w-3 sm:h-4 sm:w-4" />
                     DOMAIN ALREADY CLAIMED! TRY OTHER NAME
+                  </>
+                ) : status === "restricted" ? (
+                  <>
+                    <TriangleAlert className="h-3 w-3 sm:h-4 sm:w-4" />
+                    RESTRICTED NAME! CHOOSE ANOTHER
                   </>
                 ) : (
                   <>

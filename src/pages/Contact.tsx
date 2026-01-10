@@ -8,10 +8,13 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { Mail, MessageSquare, User } from "lucide-react";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  subject: z.string().trim().min(1, "Subject is required").max(200, "Subject must be less than 200 characters"),
   message: z.string().trim().min(1, "Message is required").max(1000, "Message must be less than 1000 characters"),
 });
 
@@ -21,6 +24,7 @@ const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    subject: "",
     message: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -32,6 +36,8 @@ const Contact = () => {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
+
+  const submitMessage = useMutation(api.contact.submit);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,17 +56,26 @@ const Contact = () => {
     }
 
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Message sent!",
-      description: "We'll get back to you as soon as possible.",
-    });
-    
-    setFormData({ name: "", email: "", message: "" });
-    setIsSubmitting(false);
+
+    try {
+      await submitMessage(formData);
+
+      toast({
+        title: "Message sent!",
+        description: "We'll get back to you as soon as possible.",
+      });
+
+      setFormData({ name: "", email: "", subject: "", message: "" });
+    } catch (error) {
+      toast({
+        title: "Error sending message",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -108,6 +123,24 @@ const Contact = () => {
               />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="subject" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Subject
+              </Label>
+              <Input
+                id="subject"
+                name="subject"
+                value={formData.subject}
+                onChange={handleChange}
+                placeholder="What is this regarding?"
+                className={errors.subject ? "border-destructive" : ""}
+              />
+              {errors.subject && (
+                <p className="text-sm text-destructive">{errors.subject}</p>
               )}
             </div>
 
