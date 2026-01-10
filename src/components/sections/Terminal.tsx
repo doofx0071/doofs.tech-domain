@@ -40,17 +40,17 @@ export const Terminal = () => {
       return () => clearTimeout(timeout);
     }
   }, [currentText, currentLineIndex]);
-  const marqueeItems = ["FREE FOREVER", "EASY TO USE", "NO CREDIT CARD", "OPEN SOURCE", "MADE IN PH", "DEVELOPER FRIENDLY", "INSTANT SETUP", "100% FREE"];
-  return <section className="pt-4 pb-12 px-4 overflow-hidden relative">
+  const marqueeItems = ["FREE FOREVER", "EASY TO USE", "NO CREDIT CARD", "INSTANT SETUP", "100% FREE", "FULL CONTROL DNS", "NO BILLING DETAILS", "MADE IN PH", "DEVELOPER FRIENDLY"];
+  return <section className="pt-3 md:pt-4 pb-8 md:pb-12 px-4 overflow-hidden relative">
       {/* Radial Gradient Background */}
       <div className="absolute inset-0 z-0" style={{
       background: "radial-gradient(125% 125% at 50% 10%, hsl(var(--background)) 40%, hsl(var(--primary)) 100%)"
     }} />
 
       {/* Marquee */}
-      <div className="relative z-10 mb-8 border-y-2 border-border bg-accent overflow-hidden py-[25px]">
+      <div className="relative z-10 mb-6 md:mb-8 border-y-2 border-border bg-accent overflow-hidden py-4 sm:py-5 md:py-[25px]">
         <div className="flex animate-marquee whitespace-nowrap">
-          {[...marqueeItems, ...marqueeItems].map((item, index) => <span key={index} className="mx-8 text-sm md:text-base font-black uppercase text-accent-foreground" style={{
+          {[...marqueeItems, ...marqueeItems].map((item, index) => <span key={index} className="mx-4 sm:mx-6 md:mx-8 text-xs sm:text-sm md:text-base font-black uppercase text-accent-foreground" style={{
           fontFamily: "'Poppins', sans-serif"
         }}>
               {item}
@@ -61,13 +61,13 @@ export const Terminal = () => {
       {/* Small Terminal */}
       <div className="relative z-10 w-full px-4 md:px-12 lg:px-20">
         <div className="max-w-md mx-auto border-2 border-border bg-card shadow-xs">
-          <div className="border-b border-border px-3 py-1.5 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-destructive" />
-            <div className="w-2 h-2 rounded-full bg-accent" />
-            <div className="w-2 h-2 rounded-full bg-chart-2" />
-            <span className="ml-3 text-xs text-muted-foreground font-mono">terminal</span>
+          <div className="border-b border-border px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1.5 sm:gap-2">
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-destructive" />
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-accent" />
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-chart-2" />
+            <span className="ml-2 sm:ml-3 text-[10px] sm:text-xs text-muted-foreground font-mono">terminal</span>
           </div>
-          <div className="p-4 font-mono text-xs space-y-1 min-h-[120px]">
+          <div className="p-3 sm:p-4 font-mono text-[10px] sm:text-xs space-y-1 min-h-[100px] sm:min-h-[120px]">
             {/* Already typed lines */}
             {displayedLines.map((line, index) => <div key={index} className="flex items-center gap-2">
                 <span className="text-muted-foreground select-none">$</span>

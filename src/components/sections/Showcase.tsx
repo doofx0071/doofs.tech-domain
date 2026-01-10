@@ -58,7 +58,7 @@ export const Showcase = () => {
   }, []);
 
   return (
-    <section className="py-20 px-4 relative overflow-hidden bg-background">
+    <section className="py-12 md:py-20 px-4 relative overflow-hidden bg-background">
       {/* Soft Center Glow Background */}
       <div
         className="absolute inset-0 z-0 pointer-events-none"
@@ -68,25 +68,25 @@ export const Showcase = () => {
       />
 
       <div className="w-full px-4 md:px-12 lg:px-20 relative z-10">
-        <div className="text-center mb-12">
-          <span className="text-destructive font-mono text-sm font-bold tracking-wider uppercase mb-4 block">
+        <div className="text-center mb-8 md:mb-12">
+          <span className="text-destructive font-mono text-xs sm:text-sm font-bold tracking-wider uppercase mb-2 md:mb-4 block">
             Join the community
           </span>
           <h2
-            className="text-3xl md:text-4xl lg:text-5xl font-black mb-4"
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-3 md:mb-4"
             style={{ fontFamily: "'Poppins', sans-serif" }}
           >
             Built for <span className="text-accent">everyone</span>
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
             From personal portfolios to API endpoints, developers worldwide use
             doofs.tech for their projects.
           </p>
         </div>
 
         {/* Card Stack */}
-        <div className="flex justify-center items-center min-h-[300px] relative">
-          <div className="relative w-full max-w-sm h-[200px]">
+        <div className="flex justify-center items-center min-h-[250px] sm:min-h-[280px] md:min-h-[300px] relative">
+          <div className="relative w-full max-w-[280px] sm:max-w-xs md:max-w-sm h-[180px] sm:h-[190px] md:h-[200px]">
             {showcaseCards.map((card, index) => {
               const offset = (index - activeIndex + showcaseCards.length) % showcaseCards.length;
               const isActive = offset === 0;

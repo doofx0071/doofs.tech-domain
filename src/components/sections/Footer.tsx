@@ -10,8 +10,9 @@ export const Footer = () => {
   return (
     <footer className="py-8 px-4 border-t-2 border-border">
       <div className="w-full px-4 md:px-12 lg:px-20 flex flex-col md:flex-row items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-2 font-mono text-sm">
+        <a href="/" className="flex items-center gap-2 font-mono text-sm">
           <img 
+            key={theme}
             src={theme === "dark" ? logoDark : logoLight} 
             alt="doofs.tech logo" 
             className="h-6 w-auto"
@@ -19,7 +20,7 @@ export const Footer = () => {
           <span className="font-bold">doofs<span className="text-muted-foreground">.tech</span></span>
           <span className="text-muted-foreground">|</span>
           <span className="text-muted-foreground">Domains</span>
-        </Link>
+        </a>
         <nav className="flex items-center gap-6">
           <a
             href="https://github.com"

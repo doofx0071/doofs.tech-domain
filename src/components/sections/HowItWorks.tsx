@@ -31,7 +31,7 @@ const steps: Step[] = [
 
 export const HowItWorks = () => {
   return (
-    <section className="py-20 px-4 relative overflow-hidden">
+    <section className="py-12 md:py-20 px-4 relative overflow-hidden">
       {/* Gradient background */}
       <div 
         className="absolute inset-0 z-0"
@@ -42,21 +42,21 @@ export const HowItWorks = () => {
       
       <div className="w-full px-4 md:px-12 lg:px-20 relative z-10">
         {/* Header */}
-        <div className="text-center mb-16">
-          <span className="text-primary font-mono text-sm font-bold tracking-wider uppercase mb-2 block">
+        <div className="text-center mb-10 md:mb-16">
+          <span className="text-primary font-mono text-xs sm:text-sm font-bold tracking-wider uppercase mb-2 block">
             Get Started
           </span>
-          <h2 className="text-3xl md:text-4xl font-black mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-3 md:mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
             How it works
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
             Three simple steps to get your free subdomain up and running.
           </p>
         </div>
 
         {/* Steps */}
         <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative">
             {/* Connecting line - desktop only */}
             <div className="hidden md:block absolute top-16 left-[20%] right-[20%] h-0.5 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
             

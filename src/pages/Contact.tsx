@@ -66,14 +66,14 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      <main className="flex-1 py-16 px-4">
+      <main className="flex-1 py-12 md:py-16 px-4">
         <div className="container max-w-lg mx-auto">
-          <h1 className="text-3xl font-bold mb-4">Contact Us</h1>
-          <p className="text-muted-foreground mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-4">Contact Us</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mb-6 md:mb-8">
             Have questions or feedback? We'd love to hear from you.
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name" className="flex items-center gap-2">
                 <User className="h-4 w-4" />

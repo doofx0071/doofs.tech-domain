@@ -1,27 +1,25 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Globe, Activity, TrendingUp } from "lucide-react";
-
-const stats = [
-  { label: "Total Users", value: "2,847", icon: Users, change: "+12%" },
-  { label: "Active Domains", value: "1,523", icon: Globe, change: "+8%" },
-  { label: "DNS Queries Today", value: "45.2K", icon: Activity, change: "+23%" },
-  { label: "Uptime", value: "99.9%", icon: TrendingUp, change: "0%" },
-];
-
-const mockUsers = [
-  { id: 1, email: "dev@example.com", domains: 3, status: "active", joined: "2024-12-01" },
-  { id: 2, email: "startup@gmail.com", domains: 2, status: "active", joined: "2024-12-15" },
-  { id: 3, email: "builder@yahoo.com", domains: 1, status: "inactive", joined: "2025-01-02" },
-];
-
-const mockDomains = [
-  { id: 1, subdomain: "portfolio", owner: "dev@example.com", status: "active", created: "2024-12-01" },
-  { id: 2, subdomain: "api", owner: "startup@gmail.com", status: "active", created: "2024-12-15" },
-  { id: 3, subdomain: "demo", owner: "builder@yahoo.com", status: "inactive", created: "2025-01-02" },
-];
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 export function AdminOverview() {
+  const stats = useQuery(api.admin.getDashboardStats);
+  const recentUsers = useQuery(api.admin.getAllUsers, { limit: 5 });
+  const recentDomains = useQuery(api.admin.getRecentDomains, { limit: 5 });
+
+  if (!stats) {
+    return <div className="p-8 text-center text-muted-foreground">Loading dashboard data...</div>;
+  }
+
+  const statCards = [
+    { label: "Total Users", value: stats.totalUsers ?? 0, icon: Users, change: "0%" },
+    { label: "Active Domains", value: stats.activeDomains ?? 0, icon: Globe, change: "0%" },
+    { label: "DNS Records", value: stats.dnsRecords ?? 0, icon: Activity, change: "0%" },
+    { label: "Uptime", value: stats.uptime, icon: TrendingUp, change: "0%" },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -30,7 +28,7 @@ export function AdminOverview() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
+        {statCards.map((stat) => (
           <Card key={stat.label}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -56,17 +54,23 @@ export function AdminOverview() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {mockUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">{user.domains} domains</p>
+              {!recentUsers ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : recentUsers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No users found.</p>
+              ) : (
+                recentUsers.map((user: any) => (
+                  <div key={user._id} className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-xs">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">Joined {new Date(user.joined || 0).toLocaleDateString()}</p>
+                    </div>
+                    <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+                      {user.role}
+                    </Badge>
                   </div>
-                  <Badge variant={user.status === "active" ? "default" : "secondary"}>
-                    {user.status}
-                  </Badge>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -78,17 +82,30 @@ export function AdminOverview() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {mockDomains.map((domain) => (
-                <div key={domain.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{domain.subdomain}.doofs.tech</p>
-                    <p className="text-xs text-muted-foreground">{domain.owner}</p>
+              {!recentDomains ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : recentDomains.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No domains found.</p>
+              ) : (
+                recentDomains.map((domain: any) => (
+                  <div key={domain._id} className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-xs">{domain.subdomain}.doofs.tech</p>
+                      <div className="flex flex-col">
+                        <span className="text-xs text-muted-foreground truncate" title={domain.ownerEmail}>
+                          {domain.ownerName || domain.ownerEmail || "No owner"}
+                        </span>
+                        {domain.ownerName && (
+                          <span className="text-[10px] text-muted-foreground/70 truncate">{domain.ownerEmail}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant={domain.status === "active" ? "default" : "secondary"}>
+                      {domain.status}
+                    </Badge>
                   </div>
-                  <Badge variant={domain.status === "active" ? "default" : "secondary"}>
-                    {domain.status}
-                  </Badge>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

@@ -1,22 +1,82 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Loader2, X } from "lucide-react";
+import { useConvex, useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { useNavigate } from "react-router-dom";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Hero = () => {
   const [subdomain, setSubdomain] = useState("");
-  const [checked, setChecked] = useState(false);
+  const [status, setStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [reason, setReason] = useState("");
+  const [selectedDomain, setSelectedDomain] = useState("doofs.tech");
 
-  const handleCheck = (e: React.FormEvent) => {
+  const convex = useConvex();
+  const navigate = useNavigate();
+  const platformDomains = useQuery(api.platformDomains.listPublic);
+
+  useEffect(() => {
+    if (platformDomains && platformDomains.length > 0) {
+      // If doofs.tech is in the list, keep it as default, otherwise pick first
+      const hasDoofs = platformDomains.some(d => d.domain === "doofs.tech");
+      if (!hasDoofs && selectedDomain === "doofs.tech") {
+        setSelectedDomain(platformDomains[0].domain);
+      }
+    }
+  }, [platformDomains, selectedDomain]);
+
+  const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (subdomain.trim()) {
-      setChecked(true);
-      setTimeout(() => setChecked(false), 3000);
+    if (!subdomain.trim()) return;
+
+    // If already available, this button acts as "Claim"
+    if (status === "available") {
+      localStorage.setItem("claim_pending", JSON.stringify({
+        subdomain,
+        rootDomain: selectedDomain
+      }));
+      // Navigate to dashboard which should trigger auth/login if needed
+      navigate("/dashboard/domains");
+      return;
+    }
+
+    setStatus("checking");
+    setReason("");
+
+    try {
+      const result = await convex.query(api.domains.checkAvailability, {
+        subdomain: subdomain.toLowerCase(),
+        rootDomain: selectedDomain
+      });
+
+      if (result.available) {
+        setStatus("available");
+      } else {
+        setStatus("taken");
+        setReason(result.reason || "Unavailable");
+        // Reset to idle after a bit so they can try again or just let them edit
+      }
+    } catch (err) {
+      setStatus("taken");
+      setReason("Error checking availability");
     }
   };
 
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+    if (status !== "idle") setStatus("idle");
+  };
+
   return (
-    <section className="pt-20 md:pt-32 pb-8 md:pb-12 px-4 text-foreground relative overflow-hidden bg-background">
+    <section className="pt-16 sm:pt-20 md:pt-32 pb-6 sm:pb-8 md:pb-12 px-4 text-foreground relative overflow-hidden bg-background">
       {/* Top Fade Grid Background */}
       <div
         className="absolute inset-0 z-0"
@@ -32,61 +92,120 @@ export const Hero = () => {
             "radial-gradient(ellipse 70% 60% at 50% 0%, #000 60%, transparent 100%)",
         }}
       />
-      
-      <div className="w-full px-4 md:px-12 lg:px-20 relative">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+
+      <div className="w-full px-2 sm:px-4 md:px-12 lg:px-20 relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           {/* Left side - Text */}
           <div>
-            <span className="text-destructive font-mono text-sm font-bold tracking-wider uppercase mb-4 block">
+            <span className="text-destructive font-mono text-xs sm:text-sm font-bold tracking-wider uppercase mb-3 md:mb-4 block">
               Free domains for developers
             </span>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              A FREE NAME
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black mb-4 sm:mb-6 leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              ZERO COST.
               <br />
-              <span className="text-accent dark:text-accent">FOR EVERYONE.</span>
+              <span className="text-accent dark:text-accent">ZERO STRINGS.</span>
             </h1>
-            <p className="text-lg text-muted-foreground mb-2">
-              Made for <strong className="text-foreground">the world</strong>, by Filipinos.
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-1 md:mb-2 leading-relaxed">
+              Made for <strong className="text-foreground">the world</strong>, by doof.
             </p>
-            <p className="text-muted-foreground">
-              100% Free and open. No strings attached.
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+              100% Free forever. No hidden fees, no strings attached.
             </p>
           </div>
 
           {/* Right side - Check availability card */}
-          <div className="bg-background text-foreground p-6 border-2 border-border shadow-xl">
-            <h2 className="font-bold text-sm uppercase tracking-wider mb-4">
+          <div className="bg-background text-foreground p-4 sm:p-5 md:p-6 border-2 border-border shadow-xl">
+            <h2 className="font-bold text-xs sm:text-sm uppercase tracking-wider mb-3 md:mb-4">
               Check Availability
             </h2>
-            <form onSubmit={handleCheck} className="space-y-4">
-              <div className="flex border-2 border-border">
+            <form onSubmit={handleCheck} className="space-y-3 md:space-y-4">
+              <div className="flex border-2 border-border focus-within:border-transparent focus-within:ring-2 focus-within:ring-blue-600 relative transition-all duration-200">
                 <Input
                   type="text"
                   placeholder="yourname"
                   value={subdomain}
-                  onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                  className="flex-1 border-0 focus-visible:ring-0 font-mono"
+                  onChange={handleInput}
+                  className="flex-1 border-0 focus-visible:ring-0 font-mono text-sm md:text-base"
                 />
-                <span className="px-4 py-2 bg-muted text-muted-foreground font-mono text-sm flex items-center border-l-2 border-border">
-                  .doofs.tech
-                </span>
+                <div className="border-l-2 border-border bg-background min-w-[120px] sm:min-w-[140px]">
+                  <Select value={selectedDomain} onValueChange={(val) => {
+                    setSelectedDomain(val);
+                    setStatus("idle");
+                  }}>
+                    <SelectTrigger className="border-0 focus:ring-0 font-mono text-xs sm:text-sm h-full bg-transparent rounded-none px-2 sm:px-3 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center truncate">
+                        <span className="truncate">.{selectedDomain}</span>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {platformDomains?.map((d: any) => (
+                        <SelectItem key={d._id} value={d.domain} className="font-mono text-xs sm:text-sm">
+                          .{d.domain}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
-                {checked ? (
+              <Button
+                type="submit"
+                className={`w-full gap-2 text-xs sm:text-sm md:text-base py-2 md:py-3 transition-all ${status === "available"
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : status === "taken"
+                    ? "bg-destructive hover:bg-destructive/90 text-white"
+                    : "bg-accent text-accent-foreground hover:bg-accent/90"
+                  }`}
+                disabled={status === "checking" || !subdomain}
+              >
+                {status === "checking" ? (
                   <>
-                    <Check className="h-4 w-4" />
-                    Available! Join waitlist below
+                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                    CHECKING...
+                  </>
+                ) : status === "available" ? (
+                  <>
+                    <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden xs:inline">Available! Click to Claim</span>
+                    <span className="xs:hidden">DOMAIN IS AVAILABLE! CLAIM NOW</span>
+                  </>
+                ) : status === "taken" ? (
+                  <>
+                    <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                    DOMAIN ALREADY CLAIMED! TRY OTHER NAME
                   </>
                 ) : (
                   <>
-                    CHECK AVAILABILITY
-                    <ArrowRight className="h-4 w-4" />
+                    <span className="hidden xs:inline">CHECK AVAILABILITY</span>
+                    <span className="xs:hidden">CHECK AVAILABILITY</span>
+                    <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
                   </>
                 )}
               </Button>
             </form>
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              ❤️ Help us keep this free — <a href="#signup" className="text-destructive hover:underline">Support us</a>
+
+            <div className="mt-6 pt-4 border-t border-border/50">
+              <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-3">Available Extensions:</p>
+              <div className="flex flex-wrap gap-2">
+                {platformDomains?.map((d: any) => (
+                  <button
+                    key={d._id}
+                    onClick={() => {
+                      setSelectedDomain(d.domain);
+                      setStatus("idle");
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-all ${selectedDomain === d.domain
+                        ? "bg-primary/10 border-primary text-primary font-medium ring-1 ring-primary/20"
+                        : "bg-background border-border text-muted-foreground hover:border-foreground/50 hover:text-foreground"
+                      }`}
+                  >
+                    .{d.domain}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <p className="text-center text-xs sm:text-sm text-muted-foreground mt-3 md:mt-4">
+              ❤️ <span className="hidden xs:inline">Help us keep this free — </span><a href="#signup" className="text-destructive hover:underline">Support us</a>
             </p>
           </div>
         </div>

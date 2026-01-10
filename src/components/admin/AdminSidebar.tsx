@@ -1,5 +1,6 @@
-import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Globe, BarChart3, Settings, HelpCircle, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Users, Globe, BarChart3, Settings, HelpCircle, LogOut, FileText } from "lucide-react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import {
   Sidebar,
   SidebarContent,
@@ -14,20 +15,31 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
+const adminRoute = import.meta.env.VITE_ADMIN_ROUTE || "/admin-122303";
+
 const menuItems = [
-  { title: "Overview", url: "/admin", icon: LayoutDashboard },
-  { title: "User Management", url: "/admin/users", icon: Users },
-  { title: "Domain Management", url: "/admin/domains", icon: Globe },
-  { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
+  { title: "Overview", url: `${adminRoute}/dashboard`, icon: LayoutDashboard },
+  { title: "User Management", url: `${adminRoute}/dashboard/users`, icon: Users },
+  { title: "Domain Management", url: `${adminRoute}/dashboard/domains`, icon: Globe },
+  { title: "Subdomain Management", url: `${adminRoute}/dashboard/subdomains`, icon: Globe },
+  { title: "Analytics", url: `${adminRoute}/dashboard/analytics`, icon: BarChart3 },
+  { title: "Audit Logs", url: `${adminRoute}/dashboard/logs`, icon: FileText },
 ];
 
 const secondaryItems = [
-  { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "Settings", url: `${adminRoute}/dashboard/settings`, icon: Settings },
   { title: "Help & Support", url: "/docs", icon: HelpCircle },
 ];
 
 export function AdminSidebar() {
   const location = useLocation();
+  const { signOut } = useAuthActions();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border h-auto">
@@ -85,8 +97,9 @@ export function AdminSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
+              onClick={handleLogout}
               tooltip="Sign Out"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
               <span>Sign Out</span>

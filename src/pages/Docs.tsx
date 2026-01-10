@@ -7,20 +7,20 @@ const Docs = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      <main className="flex-1 py-16 px-4">
+      <main className="flex-1 py-12 md:py-16 px-4">
         <div className="container max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold mb-4">Documentation</h1>
-          <p className="text-lg text-muted-foreground mb-12">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-4">Documentation</h1>
+          <p className="text-base sm:text-lg text-muted-foreground mb-8 md:mb-12">
             Everything you need to get started with Doofs.
           </p>
           
-          <div className="space-y-8">
-            <section className="border border-border rounded-lg p-6 bg-secondary/30">
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary" />
+          <div className="space-y-6 md:space-y-8">
+            <section className="border border-border rounded-lg p-4 md:p-6 bg-secondary/30">
+              <h2 className="text-lg sm:text-xl font-semibold mb-3 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                 Getting Started
               </h2>
-              <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+              <ol className="list-decimal list-inside space-y-2 text-sm sm:text-base text-muted-foreground">
                 <li>Sign in with your GitHub account</li>
                 <li>Choose an available subdomain (e.g., yourname.doofs.tech)</li>
                 <li>Configure your DNS records</li>
@@ -28,12 +28,12 @@ const Docs = () => {
               </ol>
             </section>
 
-            <section className="border border-border rounded-lg p-6 bg-secondary/30">
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                <Terminal className="h-5 w-5 text-accent" />
+            <section className="border border-border rounded-lg p-4 md:p-6 bg-secondary/30">
+              <h2 className="text-lg sm:text-xl font-semibold mb-3 flex items-center gap-2">
+                <Terminal className="h-4 w-4 sm:h-5 sm:w-5 text-accent flex-shrink-0" />
                 Supported DNS Records
               </h2>
-              <ul className="space-y-2 text-muted-foreground">
+              <ul className="space-y-2 text-sm sm:text-base text-muted-foreground">
                 <li><strong className="text-foreground">A Record:</strong> Point to an IPv4 address</li>
                 <li><strong className="text-foreground">AAAA Record:</strong> Point to an IPv6 address</li>
                 <li><strong className="text-foreground">CNAME Record:</strong> Alias to another domain</li>
@@ -42,24 +42,24 @@ const Docs = () => {
               </ul>
             </section>
 
-            <section className="border border-border rounded-lg p-6 bg-secondary/30">
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                <Settings className="h-5 w-5 text-chart-2" />
+            <section className="border border-border rounded-lg p-4 md:p-6 bg-secondary/30">
+              <h2 className="text-lg sm:text-xl font-semibold mb-3 flex items-center gap-2">
+                <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-chart-2 flex-shrink-0" />
                 Common Use Cases
               </h2>
-              <ul className="space-y-2 text-muted-foreground">
+              <ul className="space-y-2 text-sm sm:text-base text-muted-foreground">
                 <li><strong className="text-foreground">Vercel/Netlify:</strong> Add a CNAME record pointing to your deployment URL</li>
                 <li><strong className="text-foreground">VPS/Server:</strong> Add an A record with your server's IP address</li>
                 <li><strong className="text-foreground">GitHub Pages:</strong> Add a CNAME record to your-username.github.io</li>
               </ul>
             </section>
 
-            <section className="border border-border rounded-lg p-6 bg-secondary/30">
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                <HelpCircle className="h-5 w-5 text-chart-4" />
+            <section className="border border-border rounded-lg p-4 md:p-6 bg-secondary/30">
+              <h2 className="text-lg sm:text-xl font-semibold mb-3 flex items-center gap-2">
+                <HelpCircle className="h-4 w-4 sm:h-5 sm:w-5 text-chart-4 flex-shrink-0" />
                 Need Help?
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Check out our <Link to="/#faq" className="text-primary hover:underline">FAQ</Link> or open an issue on our GitHub repository for support.
               </p>
             </section>
