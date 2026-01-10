@@ -19,6 +19,8 @@ const schema = defineSchema({
     avatarVariant: v.optional(v.string()),
     // Track last login for welcome message
     lastLoginAt: v.optional(v.number()),
+    // Onboarding status
+    hasCompletedOnboarding: v.optional(v.boolean()),
     // Role-based access control
     role: v.optional(v.union(v.literal("admin"), v.literal("user"))),
     // Account status (for suspend/ban)

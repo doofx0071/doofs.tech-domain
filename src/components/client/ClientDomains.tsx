@@ -132,7 +132,7 @@ export function ClientDomains() {
 
             <Dialog open={isClaimOpen} onOpenChange={setIsClaimOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="h-9">
+                <Button size="sm" className="h-9" data-tour="add-domain-button">
                   <Plus className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Claim New Domain</span>
                 </Button>
