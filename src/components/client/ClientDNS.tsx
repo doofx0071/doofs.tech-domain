@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Trash2, Globe, ShieldCheck, Loader2, MoreVertical, Edit, Copy, BookOpen } from 'lucide-react';
 import { useQuery, useMutation } from "convex/react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { api } from "../../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -292,7 +293,11 @@ export function ClientDNS() {
               </TableHeader>
               <TableBody>
                 {!records ? (
-                  <TableRow><TableCell colSpan={6} className="text-center">Loading...</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-12">
+                      <LoadingSpinner />
+                    </TableCell>
+                  </TableRow>
                 ) : records.length === 0 ? (
                   <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No DNS records found.</TableCell></TableRow>
                 ) : (

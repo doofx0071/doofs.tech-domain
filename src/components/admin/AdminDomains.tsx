@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Search, MoreHorizontal, Plus, Loader2, Globe, Copy, Check, RefreshCw, Pencil, Server } from "lucide-react";
 import { useQuery, useMutation, useAction } from "convex/react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -301,7 +302,9 @@ export function AdminDomains() {
                             <TableBody>
                                 {!domains ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center py-8">Loading...</TableCell>
+                                        <TableCell colSpan={6} className="text-center py-12">
+                                            <LoadingSpinner />
+                                        </TableCell>
                                     </TableRow>
                                 ) : domains.length === 0 ? (
                                     <TableRow>

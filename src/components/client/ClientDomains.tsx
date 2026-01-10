@@ -8,6 +8,7 @@ import { api } from "../../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Dialog,
   DialogContent,
@@ -211,7 +212,11 @@ export function ClientDomains() {
               </TableHeader>
               <TableBody>
                 {!domains ? (
-                  <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-12">
+                      <LoadingSpinner />
+                    </TableCell>
+                  </TableRow>
                 ) : domains.length === 0 ? (
                   <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No domains found.</TableCell></TableRow>
                 ) : (

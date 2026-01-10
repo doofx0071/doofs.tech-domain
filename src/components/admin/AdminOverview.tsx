@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Globe, Activity, TrendingUp } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 
@@ -10,7 +11,11 @@ export function AdminOverview() {
   const recentDomains = useQuery(api.admin.getRecentDomains, { limit: 5 });
 
   if (!stats) {
-    return <div className="p-8 text-center text-muted-foreground">Loading dashboard data...</div>;
+    return (
+      <div className="flex items-center justify-center p-8 min-h-[400px]">
+        <LoadingSpinner showText text="Loading dashboard data..." />
+      </div>
+    );
   }
 
   const statCards = [

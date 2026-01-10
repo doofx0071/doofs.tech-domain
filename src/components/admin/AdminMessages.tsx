@@ -25,7 +25,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, MoreVertical, Mail, CheckCircle, XCircle, Reply } from "lucide-react";
+import { MoreVertical, Mail, CheckCircle, XCircle, Reply } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { format } from "date-fns";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useToast } from "@/hooks/use-toast";
@@ -76,8 +77,8 @@ export function AdminMessages() {
 
     if (!messages) {
         return (
-            <div className="flex h-full items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center p-8 min-h-[400px]">
+                <LoadingSpinner showText text="Loading messages..." />
             </div>
         );
     }

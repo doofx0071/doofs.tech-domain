@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export function AdminAnalytics() {
   const stats = useQuery(api.admin.getDashboardStats);
@@ -15,7 +16,9 @@ export function AdminAnalytics() {
       </div>
 
       {!stats ? (
-        <div className="text-muted-foreground text-center py-10">Loading analytics data...</div>
+        <div className="flex items-center justify-center p-8 min-h-[400px]">
+          <LoadingSpinner showText text="Loading analytics data..." />
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>

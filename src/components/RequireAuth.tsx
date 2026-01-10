@@ -1,5 +1,6 @@
 import { useConvexAuth } from "convex/react";
 import { Navigate, useLocation } from "react-router-dom";
+import { GlobalLoading } from "@/components/ui/loading-spinner";
 
 export function RequireAuth({ children }: { children: JSX.Element }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -8,7 +9,7 @@ export function RequireAuth({ children }: { children: JSX.Element }) {
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <GlobalLoading />
       </div>
     );
   }

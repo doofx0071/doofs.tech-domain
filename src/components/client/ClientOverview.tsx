@@ -5,13 +5,18 @@ import { Globe, Activity, Settings, Plus } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Link } from "react-router-dom";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export function ClientOverview() {
   const stats = useQuery(api.dns.getMyStats);
   const domains = useQuery(api.domains.listMine, {});
 
   if (!stats || !domains) {
-    return <div className="p-8 text-center text-muted-foreground">Loading overview...</div>;
+    return (
+      <div className="flex items-center justify-center p-8 min-h-[400px]">
+        <LoadingSpinner showText text="Loading overview..." />
+      </div>
+    );
   }
 
   const availableSlots = Math.max(0, stats.domainsLimit - stats.totalDomains);

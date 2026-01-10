@@ -8,6 +8,7 @@ import { AdminDomains } from "../components/admin/AdminDomains";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { AdminAuditLogs } from "@/components/admin/AdminAuditLogs";
 import { AdminMessages } from "@/components/admin/AdminMessages";
+import { AdminSettings } from "@/components/admin/AdminSettings";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
@@ -69,6 +70,7 @@ const AdminDashboard = () => {
                 <Route path="analytics" element={<AdminAnalytics />} />
                 <Route path="messages" element={<AdminMessages />} />
                 <Route path="logs" element={<AdminAuditLogs />} />
+                <Route path="settings" element={<AdminSettings />} />
               </Routes>
             </main>
           </SidebarInset>

@@ -1,5 +1,6 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,7 +18,11 @@ export function AdminAuditLogs() {
   const stats = useQuery(api.auditLogs.getAuditLogsStats, { timeRange: "7d" });
 
   if (!auditLogs || !stats) {
-    return <div>Loading audit logs...</div>;
+    return (
+      <div className="flex items-center justify-center p-8 min-h-[400px]">
+        <LoadingSpinner showText text="Loading audit logs..." />
+      </div>
+    );
   }
 
   const getActionBadgeColor = (action: string) => {

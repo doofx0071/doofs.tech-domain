@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Search, MoreHorizontal, Shield, ShieldOff, UserX, UserCheck, Ban, Trash2, Loader2, AlertTriangle, Calendar, Clock, User, Pencil } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
@@ -196,7 +197,9 @@ export function AdminUsers() {
               <TableBody>
                 {!users ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">Loading...</TableCell>
+                    <TableCell colSpan={5} className="text-center py-12">
+                      <LoadingSpinner />
+                    </TableCell>
                   </TableRow>
                 ) : filteredUsers?.length === 0 ? (
                   <TableRow>
