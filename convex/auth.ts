@@ -11,7 +11,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       if (redirectTo) {
         return redirectTo;
       }
-      return "http://localhost:8080/dashboard";
+      return redirectTo || process.env.SITE_URL || "http://localhost:5173";
     },
   },
 });
