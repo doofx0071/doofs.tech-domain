@@ -235,6 +235,7 @@ export function ClientDomains() {
                             variant="ghost"
                             size="icon"
                             className="text-destructive hover:text-destructive"
+                            data-tour="delete-domain-btn"
                             onClick={() => {
                               setDeleteId(domain._id);
                               setDeleteSubdomain(domain.subdomain);

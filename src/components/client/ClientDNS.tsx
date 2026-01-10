@@ -163,7 +163,7 @@ export function ClientDNS() {
             <CardDescription>All DNS records across your domains</CardDescription>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsHelpOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setIsHelpOpen(true)} data-tour="dns-guide-btn">
               <BookOpen className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">DNS Guide</span>
             </Button>
@@ -172,7 +172,7 @@ export function ClientDNS() {
               if (!open) resetForm();
             }}>
               <DialogTrigger asChild>
-                <Button size="sm">
+                <Button size="sm" data-tour="add-dns-btn">
                   <Plus className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Add Record</span>
                 </Button>

@@ -146,6 +146,7 @@ export function ClientSettings() {
               <Input
                 id="fullName"
                 type="text"
+                data-tour="settings-name-input"
                 defaultValue={displayName}
                 placeholder="Enter your full name"
                 onChange={(e) => setFullName(e.target.value)}
@@ -157,7 +158,7 @@ export function ClientSettings() {
               <p className="text-xs text-muted-foreground">Email cannot be changed</p>
             </div>
           </div>
-          <Button onClick={handleProfileSave}>Save Changes</Button>
+          <Button onClick={handleProfileSave} data-tour="settings-save-btn">Save Changes</Button>
         </CardContent>
       </Card>
 
@@ -197,7 +198,7 @@ export function ClientSettings() {
         <CardContent>
           <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmation("")}>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive">Delete Account</Button>
+              <Button variant="destructive" data-tour="delete-account-btn">Delete Account</Button>
             </AlertDialogTrigger>
             <AlertDialogContent className="w-[90%] sm:w-full sm:max-w-lg">
               <AlertDialogHeader>

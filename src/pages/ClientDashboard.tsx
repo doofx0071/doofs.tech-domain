@@ -58,6 +58,7 @@ const ClientDashboard = () => {
               let tourAttr = {};
               if (tab.url === "/dashboard/domains") tourAttr = { "data-tour": "domains-tab" };
               if (tab.url === "/dashboard/dns") tourAttr = { "data-tour": "dns-tab" };
+              if (tab.url === "/dashboard/settings") tourAttr = { "data-tour": "settings-tab" };
 
               return (
                 <Link
