@@ -171,6 +171,40 @@ const schema = defineSchema({
     updatedAt: v.number(),
   })
     .index("by_user_and_key", ["userId", "key"]),
+
+  // Platform Settings (Admin-controlled global configuration)
+  platform_settings: defineTable({
+    // General Settings
+    maintenanceMode: v.boolean(),
+    maintenanceMessage: v.optional(v.string()),
+    allowRegistrations: v.boolean(),
+    allowDomainCreation: v.boolean(),
+
+    // Rate Limiting
+    maxDomainsPerUser: v.number(),
+    maxDnsRecordsPerDomain: v.number(),
+    maxDnsOperationsPerMinute: v.number(),
+    maxApiRequestsPerMinute: v.number(),
+
+    // Email Configuration
+    mailgunDomain: v.optional(v.string()),
+    mailgunEnabled: v.boolean(),
+    notifyAdminOnNewUser: v.boolean(),
+    notifyAdminOnNewDomain: v.boolean(),
+
+    // Security
+    requireTurnstile: v.boolean(),
+    sessionTimeoutMinutes: v.number(),
+    maxLoginAttempts: v.number(),
+
+    // User Management
+    maxTotalUsers: v.optional(v.number()),
+    defaultUserRole: v.union(v.literal("admin"), v.literal("user")),
+
+    // Metadata
+    updatedAt: v.number(),
+    updatedBy: v.id("users"),
+  }),
 });
 
 export default schema;

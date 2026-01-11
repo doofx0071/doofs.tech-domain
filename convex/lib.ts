@@ -64,3 +64,146 @@ export async function verifyTurnstile(token: string) {
     }
     return outcome.success;
 }
+
+/**
+ * Check if platform is in maintenance mode
+ * Throws error if in maintenance mode and user is not admin
+ */
+export async function checkMaintenanceMode(ctx: any) {
+    const userId = await auth.getUserId(ctx);
+
+    // Admins bypass maintenance mode
+    if (userId) {
+        const user = await ctx.db.get(userId);
+        if (user?.role === "admin") {
+            return;
+        }
+    }
+
+    const settings = await ctx.db.query("platform_settings").first();
+    if (settings?.maintenanceMode) {
+        throw new Error(
+            settings.maintenanceMessage ||
+            "Platform is currently under maintenance. Please check back soon."
+        );
+    }
+}
+
+/**
+ * Get platform settings or return defaults
+ */
+export async function getSettingsOrDefaults(ctx: any) {
+    const settings = await ctx.db.query("platform_settings").first();
+
+    if (!settings) {
+        return {
+            maintenanceMode: false,
+            allowRegistrations: true,
+            allowDomainCreation: true,
+            maxDomainsPerUser: 10,
+            maxDnsRecordsPerDomain: 50,
+            maxDnsOperationsPerMinute: 30,
+            maxApiRequestsPerMinute: 100,
+            requireTurnstile: true,
+            sessionTimeoutMinutes: 60,
+            maxLoginAttempts: 5,
+            mailgunEnabled: false,
+            notifyAdminOnNewUser: false,
+            notifyAdminOnNewDomain: false,
+            defaultUserRole: "user" as "user" | "admin",
+        };
+    }
+
+    return settings;
+}
+
+/**
+ * Check if a user has reached their domain limit
+ */
+export async function checkDomainLimit(ctx: any, userId: string) {
+    const settings = await getSettingsOrDefaults(ctx);
+    const userDomains = await ctx.db
+        .query("domains")
+        .withIndex("by_user", (q: any) => q.eq("userId", userId))
+        .collect();
+
+    if (userDomains.length >= settings.maxDomainsPerUser) {
+        throw new Error(
+            `You have reached the maximum limit of ${settings.maxDomainsPerUser} domains per user.`
+        );
+    }
+}
+
+/**
+ * Check if a domain has reached its DNS record limit
+ */
+export async function checkDnsRecordLimit(ctx: any, domainId: string) {
+    const settings = await getSettingsOrDefaults(ctx);
+    const records = await ctx.db
+        .query("dns_records")
+        .withIndex("by_domain", (q: any) => q.eq("domainId", domainId))
+        .collect();
+
+    if (records.length >= settings.maxDnsRecordsPerDomain) {
+        throw new Error(
+            `This domain has reached the maximum limit of ${settings.maxDnsRecordsPerDomain} DNS records.`
+        );
+    }
+}
+
+/**
+ * Check and enforce DNS operations rate limit
+ * Uses a sliding window approach with the rate_limits table
+ */
+export async function checkDnsOperationsRateLimit(ctx: any, userId: string) {
+    const settings = await getSettingsOrDefaults(ctx);
+    const limit = settings.maxDnsOperationsPerMinute;
+    const windowMs = 60 * 1000; // 60 seconds
+    const now = Date.now();
+    const windowStart = now - windowMs;
+
+    // Get or create rate limit entry for this user
+    const key = "dns_operations";
+    const rateLimitEntry = await ctx.db
+        .query("rate_limits")
+        .withIndex("by_user_and_key", (q: any) => q.eq("userId", userId).eq("key", key))
+        .first();
+
+    if (!rateLimitEntry) {
+        // First operation, create entry
+        await ctx.db.insert("rate_limits", {
+            userId,
+            key,
+            windowStart: now,
+            count: 1,
+            updatedAt: now,
+        });
+        return;
+    }
+
+    // Check if we're still in the same window
+    if (rateLimitEntry.windowStart > windowStart) {
+        // Still in the current window
+        if (rateLimitEntry.count >= limit) {
+            const resetIn = Math.ceil((rateLimitEntry.windowStart + windowMs - now) / 1000);
+            throw new Error(
+                `Rate limit exceeded. You can perform ${limit} DNS operations per minute. Please wait ${resetIn} seconds.`
+            );
+        }
+
+        // Increment count
+        await ctx.db.patch(rateLimitEntry._id, {
+            count: rateLimitEntry.count + 1,
+            updatedAt: now,
+        });
+    } else {
+        // Window expired, start new window
+        await ctx.db.patch(rateLimitEntry._id, {
+            windowStart: now,
+            count: 1,
+            updatedAt: now,
+        });
+    }
+}
+
+

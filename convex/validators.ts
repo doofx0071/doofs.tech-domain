@@ -91,3 +91,71 @@ export function computeFqdn(name: string, subdomain: string, rootDomain: string)
     }
     return `${n}.${s}.${r}`;
 }
+
+/**
+ * Validate platform settings updates
+ */
+export function validateSettingsUpdate(updates: Record<string, any>) {
+    // Validate rate limiting values
+    if (updates.maxDomainsPerUser !== undefined) {
+        const val = updates.maxDomainsPerUser;
+        if (typeof val !== "number" || val < 1 || val > 1000) {
+            throw new Error("maxDomainsPerUser must be between 1 and 1000");
+        }
+    }
+
+    if (updates.maxDnsRecordsPerDomain !== undefined) {
+        const val = updates.maxDnsRecordsPerDomain;
+        if (typeof val !== "number" || val < 1 || val > 500) {
+            throw new Error("maxDnsRecordsPerDomain must be between 1 and 500");
+        }
+    }
+
+    if (updates.maxDnsOperationsPerMinute !== undefined) {
+        const val = updates.maxDnsOperationsPerMinute;
+        if (typeof val !== "number" || val < 1 || val > 1000) {
+            throw new Error("maxDnsOperationsPerMinute must be between 1 and 1000");
+        }
+    }
+
+    if (updates.maxApiRequestsPerMinute !== undefined) {
+        const val = updates.maxApiRequestsPerMinute;
+        if (typeof val !== "number" || val < 10 || val > 10000) {
+            throw new Error("maxApiRequestsPerMinute must be between 10 and 10000");
+        }
+    }
+
+    // Validate security settings
+    if (updates.sessionTimeoutMinutes !== undefined) {
+        const val = updates.sessionTimeoutMinutes;
+        if (typeof val !== "number" || val < 5 || val > 43200) { // 5 min to 30 days
+            throw new Error("sessionTimeoutMinutes must be between 5 and 43200 (30 days)");
+        }
+    }
+
+    if (updates.maxLoginAttempts !== undefined) {
+        const val = updates.maxLoginAttempts;
+        if (typeof val !== "number" || val < 3 || val > 20) {
+            throw new Error("maxLoginAttempts must be between 3 and 20");
+        }
+    }
+
+    // Validate user limits
+    if (updates.maxTotalUsers !== undefined && updates.maxTotalUsers !== null) {
+        const val = updates.maxTotalUsers;
+        if (typeof val !== "number" || val < 1) {
+            throw new Error("maxTotalUsers must be at least 1");
+        }
+    }
+
+    // Validate Mailgun domain format
+    if (updates.mailgunDomain !== undefined && updates.mailgunDomain !== null) {
+        const domain = updates.mailgunDomain.trim();
+        if (domain && !domain.includes(".")) {
+            throw new Error("Invalid Mailgun domain format");
+        }
+    }
+
+    return true;
+}
+

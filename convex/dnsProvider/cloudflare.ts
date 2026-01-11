@@ -28,20 +28,28 @@ export const upsertRecord = action({
             "Content-Type": "application/json",
         };
 
+
         // If we have a record ID, try to update it first
         if (args.providerRecordId) {
+            // Build request body - only include priority for record types that need it
+            const requestBody: any = {
+                type: args.type,
+                name: args.name,
+                content: args.content,
+                ttl: args.ttl || 1, // 1 = automatic
+            };
+
+            // Only include priority for MX, SRV, URI records (or if explicitly provided)
+            if (args.priority !== undefined) {
+                requestBody.priority = args.priority;
+            }
+
             const resp = await fetch(
                 `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records/${args.providerRecordId}`,
                 {
                     method: "PUT",
                     headers,
-                    body: JSON.stringify({
-                        type: args.type,
-                        name: args.name,
-                        content: args.content,
-                        priority: args.priority,
-                        ttl: args.ttl || 1, // 1 = automatic
-                    }),
+                    body: JSON.stringify(requestBody),
                 }
             );
 
@@ -70,18 +78,23 @@ export const upsertRecord = action({
         const existing = listData.result?.find((r: any) => r.name === args.name && r.type === args.type);
 
         if (existing) {
+            const requestBody: any = {
+                type: args.type,
+                name: args.name,
+                content: args.content,
+                ttl: args.ttl || 1,
+            };
+
+            if (args.priority !== undefined) {
+                requestBody.priority = args.priority;
+            }
+
             const resp = await fetch(
                 `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records/${existing.id}`,
                 {
                     method: "PUT",
                     headers,
-                    body: JSON.stringify({
-                        type: args.type,
-                        name: args.name,
-                        content: args.content,
-                        priority: args.priority,
-                        ttl: args.ttl || 1,
-                    }),
+                    body: JSON.stringify(requestBody),
                 }
             );
             const data = await resp.json();
@@ -90,18 +103,23 @@ export const upsertRecord = action({
         }
 
         // Truly create new
+        const createBody: any = {
+            type: args.type,
+            name: args.name,
+            content: args.content,
+            ttl: args.ttl || 1,
+        };
+
+        if (args.priority !== undefined) {
+            createBody.priority = args.priority;
+        }
+
         const createResp = await fetch(
             `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records`,
             {
                 method: "POST",
                 headers,
-                body: JSON.stringify({
-                    type: args.type,
-                    name: args.name,
-                    content: args.content,
-                    priority: args.priority,
-                    ttl: args.ttl || 1,
-                }),
+                body: JSON.stringify(createBody),
             }
         );
 

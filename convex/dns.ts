@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { requireUserId, now } from "./lib";
+import { requireUserId, now, checkDnsRecordLimit, checkDnsOperationsRateLimit } from "./lib";
 import { validateDnsName, validateRecordContent, computeFqdn } from "./validators";
 import { assertDomainOwner } from "./domains";
 
@@ -33,6 +33,12 @@ export const createRecord = mutation({
         const userId = await requireUserId(ctx);
         const domain = await assertDomainOwner(ctx, args.domainId);
 
+        // Check rate limit for DNS operations
+        await checkDnsOperationsRateLimit(ctx, userId);
+
+        // Check DNS record limit for this domain
+        await checkDnsRecordLimit(ctx, args.domainId);
+
         // Validation
         const name = validateDnsName(args.name);
         const content = validateRecordContent(args.type, args.content);
@@ -44,8 +50,11 @@ export const createRecord = mutation({
             throw new Error("You can only manage records within your subdomain.");
         }
 
-        // Check Rate Limits (Simple simplified version)
-        // In strict impl, we would check rate_limits table
+        // Default priority for MX records (required by Cloudflare)
+        let priority = args.priority;
+        if (args.type === "MX" && !priority) {
+            priority = 10; // Default priority for MX records
+        }
 
         // Use domain owner's ID for the record, so it shows up in their stats
         // If domain has no owner (platform), fall back to acting user
@@ -60,11 +69,20 @@ export const createRecord = mutation({
             name,
             fqdn,
             content,
-            priority: args.priority,
+            priority,
             ttl: args.ttl,
             status: "pending",
             createdAt: now(),
             updatedAt: now(),
+        });
+
+        // Create audit log
+        await ctx.db.insert("auditLogs", {
+            userId,
+            action: "dns_record_created",
+            details: `Created ${args.type} record: ${fqdn} → ${content}`,
+            timestamp: now(),
+            status: "success",
         });
 
         // Enqueue Job
@@ -99,8 +117,20 @@ export const deleteRecord = mutation({
             }
         }
 
+        // Check rate limit for DNS operations
+        await checkDnsOperationsRateLimit(ctx, userId);
+
         // Mark deleting
         await ctx.db.patch(args.recordId, { status: "deleting", updatedAt: now() });
+
+        // Create audit log
+        await ctx.db.insert("auditLogs", {
+            userId,
+            action: "dns_record_deleted",
+            details: `Deleted ${record.type} record: ${record.fqdn}`,
+            timestamp: now(),
+            status: "success",
+        });
 
         // Enqueue Job
         await ctx.scheduler.runAfter(0, internal.dnsJobs.processDue);
@@ -139,6 +169,9 @@ export const updateRecord = mutation({
             }
         }
 
+        // Check rate limit for DNS operations
+        await checkDnsOperationsRateLimit(ctx, userId);
+
         const domain = await ctx.db.get(record.domainId);
         if (!domain) throw new Error("Domain not found");
 
@@ -153,17 +186,32 @@ export const updateRecord = mutation({
             throw new Error("You can only manage records within your subdomain.");
         }
 
+        // Default priority for MX records (required by Cloudflare)
+        let priority = args.priority;
+        if (args.type === "MX" && !priority) {
+            priority = 10; // Default priority for MX records
+        }
+
         // Update DB
         await ctx.db.patch(args.recordId, {
             type: args.type,
             name,
             fqdn,
             content,
-            priority: args.priority,
+            priority,
             ttl: args.ttl,
             status: "pending",
             updatedAt: now(),
             lastError: undefined, // Clear previous errors
+        });
+
+        // Create audit log
+        await ctx.db.insert("auditLogs", {
+            userId,
+            action: "dns_record_updated",
+            details: `Updated ${args.type} record: ${fqdn} → ${content}`,
+            timestamp: now(),
+            status: "success",
         });
 
         // Enqueue Job (UPSERT handles updates too)

@@ -80,6 +80,7 @@ export const processDue = internalAction({
                     type: record.type,
                     name: record.fqdn,
                     content: record.content,
+                    priority: record.priority, // Required for MX records
                     ttl: record.ttl,
                     providerRecordId: record.providerRecordId
                 });

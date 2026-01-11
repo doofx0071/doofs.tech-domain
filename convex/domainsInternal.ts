@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
-import { requireActivePlatformDomain, now } from "./lib";
+import { requireActivePlatformDomain, now, getSettingsOrDefaults } from "./lib";
 import { validateSubdomainLabel } from "./validators";
 
 export const getDomainWithRecords = internalQuery({
@@ -44,14 +44,20 @@ export const claimInternal = internalMutation({
         userId: v.id("users"),
     },
     handler: async (ctx, args) => {
-        // Enforce 5-domain limit
+        // Check if domain creation is allowed
+        const settings = await getSettingsOrDefaults(ctx);
+        if (!settings.allowDomainCreation) {
+            throw new Error("Domain creation is currently disabled by the platform administrator.");
+        }
+
+        // Enforce domain limit from settings
         const userDomains = await ctx.db
             .query("domains")
             .withIndex("by_user", (q) => q.eq("userId", args.userId))
             .collect();
 
-        if (userDomains.length >= 5) {
-            throw new Error("You have reached the limit of 5 subdomains per user.");
+        if (userDomains.length >= settings.maxDomainsPerUser) {
+            throw new Error(`You have reached the limit of ${settings.maxDomainsPerUser} subdomains per user.`);
         }
 
         const rootDomain = args.rootDomain.toLowerCase();

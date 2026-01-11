@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query, action, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { auth } from "./auth";
-import { requireUserId, applySearch, now, verifyTurnstile, requireActivePlatformDomain } from "./lib";
+import { requireUserId, applySearch, now, verifyTurnstile, requireActivePlatformDomain, checkDomainLimit, getSettingsOrDefaults } from "./lib";
 import { validateSubdomainLabel } from "./validators";
 
 
