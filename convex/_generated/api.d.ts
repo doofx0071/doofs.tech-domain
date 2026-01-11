@@ -24,6 +24,7 @@ import type * as lib from "../lib.js";
 import type * as platformDns from "../platformDns.js";
 import type * as platformDomains from "../platformDomains.js";
 import type * as profile from "../profile.js";
+import type * as ratelimit from "../ratelimit.js";
 import type * as settings from "../settings.js";
 import type * as storage from "../storage.js";
 import type * as users from "../users.js";
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   platformDns: typeof platformDns;
   platformDomains: typeof platformDomains;
   profile: typeof profile;
+  ratelimit: typeof ratelimit;
   settings: typeof settings;
   storage: typeof storage;
   users: typeof users;

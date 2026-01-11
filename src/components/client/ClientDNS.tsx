@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Trash2, Globe, ShieldCheck, Loader2, MoreVertical, Edit, Copy, BookOpen } from 'lucide-react';
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { api } from "../../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +51,7 @@ export function ClientDNS() {
   const createRecord = useMutation(api.dns.createRecord);
   const deleteRecord = useMutation(api.dns.deleteRecord);
   const updateRecord = useMutation(api.dns.updateRecord);
+  const verifyPropagation = useAction(api.dns.verifyPropagation);
   const { toast } = useToast();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -149,6 +150,27 @@ export function ClientDNS() {
     }
   };
 
+  const handleVerify = async (record: any) => {
+    toast({ title: "Verifying propagation...", description: "Checking Cloudflare Public DNS..." });
+    try {
+      const result = await verifyPropagation({ recordId: record._id });
+      if (result.propagated) {
+        toast({
+          title: "✅ Propagated",
+          description: "Record is visible on public DNS.",
+        });
+      } else {
+        toast({
+          title: "⏳ Not yet propagated",
+          description: "Cloudflare DoH does not see this value yet.",
+          variant: "destructive"
+        });
+      }
+    } catch (e: any) {
+      toast({ title: "Verification Error", description: e.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -209,7 +231,7 @@ export function ClientDNS() {
                   <div className="grid grid-cols-4 gap-4">
                     <div className="col-span-1 space-y-2">
                       <Label>Type</Label>
-                      <Select value={type} onValueChange={(v: any) => setType(v)}>
+                      <Select value={type} onValueChange={(v: any) => setType(v as any)}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -322,6 +344,13 @@ export function ClientDNS() {
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem
                               className="cursor-pointer"
+                              onClick={() => handleVerify(record)}
+                            >
+                              <ShieldCheck className="mr-2 h-4 w-4" />
+                              Verify Propagation
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer"
                               onClick={() => {
                                 navigator.clipboard.writeText(record.content);
                                 toast({ title: "Copied value to clipboard" });
@@ -381,7 +410,7 @@ export function ClientDNS() {
             <div className="grid grid-cols-4 gap-4">
               <div className="col-span-1 space-y-2">
                 <Label>Type</Label>
-                <Select value={type} onValueChange={(v: any) => setType(v)}>
+                <Select value={type} onValueChange={(v: any) => setType(v as any)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

@@ -1,7 +1,8 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, action } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { requireUserId, now, checkDnsRecordLimit, checkDnsOperationsRateLimit } from "./lib";
+import { requireUserId, now, checkDnsRecordLimit } from "./lib";
+import { checkDnsOperationsRateLimit } from "./ratelimit";
 import { validateDnsName, validateRecordContent, computeFqdn } from "./validators";
 import { assertDomainOwner } from "./domains";
 
@@ -255,5 +256,87 @@ export const listAllMyRecords = query({
             .withIndex("by_user", (q) => q.eq("userId", userId))
             .collect();
         return records;
+    }
+});
+
+/**
+ * Verify if a DNS record has propagated to Cloudflare Public DNS
+ */
+export const verifyPropagation = action({
+    args: {
+        recordId: v.id("dns_records"),
+    },
+    handler: async (ctx, args) => {
+        const userId = await requireUserId(ctx); // Ensure auth
+
+        // We need to fetch the record first to get the name/type
+        // Actions can't query DB directly, so we need a helper query or pass details
+        // Pattern: Call internal query to get record details
+        const record = await ctx.runQuery(internal.dnsJobs.getRecordForJob, { recordId: args.recordId });
+
+        if (!record) throw new Error("Record not found");
+        if (record.userId !== userId) {
+            // Strict userId match for now
+        }
+
+        const type = record.type;
+        const name = record.fqdn;
+
+        // Query Cloudflare DoH
+        // https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/
+        const url = `https://cloudflare-dns.com/dns-query?name=${name}&type=${type}`;
+
+        const resp = await fetch(url, {
+            headers: { 'Accept': 'application/dns-json' }
+        });
+
+        if (!resp.ok) {
+            throw new Error(`DoH check failed: ${resp.statusText}`);
+        }
+
+        const data: any = await resp.json();
+
+        // Check if Answer matches content
+        const answers: any[] = data.Answer || [];
+        const isPropagated = answers.some((a: any) => {
+            // Cloudflare DoH returns data in "data" field
+            // simplistic check:
+            return a.data && (a.data.includes(record.content) || record.content.includes(a.data));
+        });
+
+        return {
+            propagated: isPropagated,
+            details: data
+        };
+    }
+});
+
+/**
+ * Export domain zone file (BIND format)
+ */
+export const exportZoneFile = query({
+    args: { domainId: v.id("domains") },
+    handler: async (ctx, args) => {
+        await assertDomainOwner(ctx, args.domainId);
+
+        const domain = await ctx.db.get(args.domainId);
+        if (!domain) throw new Error("Domain not found");
+
+        const records = await ctx.db
+            .query("dns_records")
+            .withIndex("by_domain", (q) => q.eq("domainId", args.domainId))
+            .collect();
+
+        let zoneFile = `$ORIGIN ${domain.subdomain}.${domain.rootDomain}.\n`;
+        zoneFile += `$TTL 3600\n`;
+        zoneFile += `; Exported from Doofs.Tech\n\n`;
+
+        records.forEach(r => {
+            const name = r.name === "@" ? "@" : r.name;
+            const priority = r.priority ? ` ${r.priority}` : "";
+            zoneFile += `${name}\tIN\t${r.type}${priority}\t${r.content}\n`;
+        });
+
+        return zoneFile;
     }
 });

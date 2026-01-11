@@ -14,6 +14,15 @@ import { api } from "../../convex/_generated/api";
 import { WelcomeToast } from "@/components/ui/WelcomeToast";
 import { GlobalLoading } from "@/components/ui/loading-spinner";
 import { OnboardingTour } from "@/components/client/OnboardingTour";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import React from "react";
 
 const tabs = [
   { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
@@ -81,6 +90,39 @@ const ClientDashboard = () => {
         </div>
       </div>
       <main className="flex-1 container max-w-7xl mx-auto p-4 md:p-6">
+        <div className="mb-4">
+          <Breadcrumb>
+            <BreadcrumbList>
+              {location.pathname.split("/").filter((s) => s !== "").map((segment, index, array) => {
+                const url = "/" + array.slice(0, index + 1).join("/");
+                const isLast = index === array.length - 1;
+                let title = segment.charAt(0).toUpperCase() + segment.slice(1);
+
+                // Custom overrides
+                if (segment === "dashboard") title = "Dashboard";
+                else {
+                  const tab = tabs.find(t => t.url === url);
+                  if (tab) title = tab.title;
+                }
+
+                return (
+                  <React.Fragment key={url}>
+                    <BreadcrumbItem>
+                      {isLast ? (
+                        <BreadcrumbPage>{title}</BreadcrumbPage>
+                      ) : (
+                        <BreadcrumbLink asChild>
+                          <Link to={url}>{title}</Link>
+                        </BreadcrumbLink>
+                      )}
+                    </BreadcrumbItem>
+                    {!isLast && <BreadcrumbSeparator />}
+                  </React.Fragment>
+                );
+              })}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
         <Routes>
           <Route index element={<ClientOverview />} />
           <Route path="domains" element={<ClientDomains />} />

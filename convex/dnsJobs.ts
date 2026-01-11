@@ -110,9 +110,30 @@ export const processDue = internalAction({
 
         } catch (error: any) {
             // Retry logic
-            const maxAttempts = 5;
+            const maxAttempts = 10; // Increased for rate limits
             const attempts = job.attempts + 1;
-            const nextRunAt = now() + (30 * 1000 * Math.pow(2, attempts)); // backoff
+
+            // Default exponential backoff
+            let nextRunAt = now() + (30 * 1000 * Math.pow(2, attempts));
+
+            // Check for Cloudflare 429 (Rate Limit)
+            // Error object might be wrapped, need to check structure depending on how `runAction` throws
+            // Assuming the action throws an error with properties or message we can parse
+            const isRateLimit = error.message?.includes("429") || error.statusCode === 429;
+
+            if (isRateLimit) {
+                console.warn(`DNS Job Rate Limited (429): ${job._id}`);
+                // Try to find Retry-After header if exposed in error message or object
+                // Simplistic parsing if message contains "Retry-After: 60"
+                const retryMatch = error.message?.match(/Retry-After: (\d+)/i);
+                if (retryMatch) {
+                    const seconds = parseInt(retryMatch[1]);
+                    nextRunAt = now() + ((seconds + 5) * 1000); // Add 5s buffer
+                } else {
+                    // Default 429 backoff if no header: 1 min, 2 min, 4 min...
+                    nextRunAt = now() + (60 * 1000 * Math.pow(2, attempts));
+                }
+            }
 
             if (attempts >= maxAttempts) {
                 await ctx.runMutation(internal.dnsJobs.completeJob, {

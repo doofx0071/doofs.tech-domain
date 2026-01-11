@@ -2,8 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Edit, Loader2, Globe } from "lucide-react";
-import { useQuery, useMutation, useAction } from "convex/react";
+import { Plus, Trash2, Edit, Loader2, Globe, Download } from "lucide-react";
+import { useQuery, useMutation, useAction, useConvex } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -55,6 +55,26 @@ export function ClientDomains() {
   const [deleteSubdomain, setDeleteSubdomain] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [token, setToken] = useState("");
+  const convex = useConvex();
+
+  const handleExport = async (domainId: string, domainName: string) => {
+    try {
+      const zoneFileContent = await convex.query(api.dns.exportZoneFile, { domainId: domainId as any });
+      // Create blob and download
+      const blob = new Blob([zoneFileContent], { type: "text/plain" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${domainName}.zone`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast({ title: "Exported", description: `Zone file for ${domainName} downloaded.` });
+    } catch (e: any) {
+      toast({ title: "Export Failed", description: e.message, variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     const pending = localStorage.getItem("claim_pending");
@@ -242,6 +262,14 @@ export function ClientDomains() {
                             }}
                           >
                             <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleExport(domain._id, `${domain.subdomain}.${domain.rootDomain}`)}
+                            title="Export Zone File"
+                          >
+                            <Download className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>

@@ -54,6 +54,25 @@ const schema = defineSchema({
     .index("by_timestamp", ["timestamp"])
     .index("by_user_and_timestamp", ["userId", "timestamp"]),
 
+  // Archived audit logs for long-term retention
+  archive_audit_logs: defineTable({
+    originalId: v.id("auditLogs"), // Reference to the original log ID
+    userId: v.id("users"),
+    action: v.string(),
+    details: v.optional(v.string()),
+    metadata: v.optional(v.object({
+      oldValue: v.optional(v.string()),
+      newValue: v.optional(v.string()),
+      ipAddress: v.optional(v.string()),
+      userAgent: v.optional(v.string()),
+    })),
+    timestamp: v.number(), // Original timestamp
+    status: v.string(),
+    archivedAt: v.number(), // When it was moved to archive
+  })
+    .index("by_user", ["userId"])
+    .index("by_timestamp", ["timestamp"]),
+
   // Archived users table for soft deletes
   archived_users: defineTable({
     originalUserId: v.string(), // We store as string since the ID is no longer valid in users table
