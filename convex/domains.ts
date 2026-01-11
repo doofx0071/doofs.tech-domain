@@ -70,11 +70,19 @@ export const claim = action({
         const isValid = await verifyTurnstile(args.token);
         if (!isValid) throw new Error("Turnstile validation failed. Please try again.");
 
-        return await ctx.runMutation(internal.domainsInternal.claimInternal, {
+        const result = await ctx.runMutation(internal.domainsInternal.claimInternal, {
             subdomain: args.subdomain,
             rootDomain: args.rootDomain ?? "doofs.tech",
             userId,
-        }) as any;
+        });
+
+        // Notify Admin
+        await ctx.runAction(internal.emailService.notifyAdmin, {
+            subject: "New Domain Claimed",
+            message: `User ${userId} has claimed the domain: ${args.subdomain}.${args.rootDomain ?? "doofs.tech"}`
+        });
+
+        return result;
     },
 });
 

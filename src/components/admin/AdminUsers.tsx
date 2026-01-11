@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Search, MoreHorizontal, Shield, ShieldOff, UserX, UserCheck, Ban, Trash2, Loader2, AlertTriangle, Calendar, Clock, User, Pencil } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, usePaginatedQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -58,7 +58,11 @@ export function AdminUsers() {
   const [editReason, setEditReason] = useState("");
   const [editLoading, setEditLoading] = useState(false);
 
-  const users = useQuery(api.admin.getAllUsers, { limit: 100 });
+  const { results: users, status, loadMore, isLoading } = usePaginatedQuery(
+    api.admin.getAllUsers,
+    {},
+    { initialNumItems: 50 }
+  );
   const { toast } = useToast();
 
   // Mutations
@@ -297,6 +301,13 @@ export function AdminUsers() {
             </Table>
           </div>
         </CardContent>
+        {status === "CanLoadMore" && (
+          <div className="p-4 border-t flex justify-center">
+            <Button variant="outline" onClick={() => loadMore(50)} disabled={isLoading}>
+              Load More
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* User Details Sheet */}

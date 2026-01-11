@@ -31,15 +31,19 @@ export function AdminSettings() {
 
         setIsSaving(true);
         try {
-            await updateSettings(formData);
+            // Strip system fields before sending
+            const { _id, _creationTime, updatedAt, updatedBy, ...cleanData } = formData;
+
+            await updateSettings(cleanData);
             toast({
                 title: "Settings Updated",
                 description: "Platform settings have been saved successfully.",
             });
         } catch (error: any) {
+            console.error("Failed to update settings:", error);
             toast({
                 title: "Error",
-                description: error.message || "Failed to update settings",
+                description: error.data?.message || error.message || "Failed to update settings",
                 variant: "destructive",
             });
         } finally {
@@ -244,6 +248,33 @@ export function AdminSettings() {
                         <p className="text-xs text-muted-foreground">
                             Configured via environment variables
                         </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="from-email">From Email</Label>
+                            <Input
+                                id="from-email"
+                                value={formData.mailgunFromEmail || ""}
+                                onChange={(e) => updateField("mailgunFromEmail", e.target.value)}
+                                placeholder="noreply@yourdomain.com"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Default sender email address
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="from-name">From Name</Label>
+                            <Input
+                                id="from-name"
+                                value={formData.mailgunFromName || ""}
+                                onChange={(e) => updateField("mailgunFromName", e.target.value)}
+                                placeholder="Doofs Tech"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Default sender name
+                            </p>
+                        </div>
                     </div>
 
                     <div className="flex items-center justify-between space-x-2">

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Search, MoreHorizontal, Plus, Loader2, Server } from "lucide-react";
-import { useQuery, useMutation, useAction } from "convex/react";
+import { useQuery, useMutation, useAction, usePaginatedQuery } from "convex/react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
@@ -50,8 +50,12 @@ export function AdminSubdomains() {
     const [dnsOpen, setDnsOpen] = useState(false);
     const [dnsDomain, setDnsDomain] = useState<any>(null);
 
-    const domains = useQuery(api.admin.getAllDomains, { search: search || undefined });
-    const createDomain = useAction(api.domains.claim);
+    const { results: domains, status, loadMore, isLoading } = usePaginatedQuery(
+        api.admin.getAllDomains,
+        { search: search || undefined },
+        { initialNumItems: 50 }
+    );
+    const createDomain = useMutation(api.admin.createDomain);
     const deleteDomain = useAction(api.domains.remove);
     const { toast } = useToast();
 
@@ -244,6 +248,13 @@ export function AdminSubdomains() {
                         </Table>
                     </div>
                 </CardContent>
+                {status === "CanLoadMore" && (
+                    <div className="p-4 border-t flex justify-center">
+                        <Button variant="outline" onClick={() => loadMore(50)} disabled={isLoading}>
+                            Load More
+                        </Button>
+                    </div>
+                )}
             </Card>
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

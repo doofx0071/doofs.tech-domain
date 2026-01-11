@@ -3,7 +3,7 @@
  * Handles creating and managing admin users
  */
 
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { auth } from "./auth";
 import { requireAdmin, requireUserId } from "./lib";
@@ -409,17 +409,65 @@ export const getAllAdmins = query({
 });
 
 /**
+ * Get all admin users (internal use)
+ */
+export const internalGetAllAdmins = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const admins = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "admin"))
+      .collect();
+
+    return admins.map(admin => ({
+      _id: admin._id,
+      name: admin.name,
+      email: admin.email,
+      role: admin.role,
+    }));
+  },
+});
+
+/**
  * Get all users (Admin only)
+ */
+import { paginationOptsValidator } from "convex/server";
+
+/**
+ * Get all users (Admin only) - Paginated
  */
 export const getAllUsers = query({
   args: {
-    limit: v.optional(v.number()),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    const limit = args.limit || 100;
-    const users = await ctx.db.query("users").take(limit);
+    const users = await ctx.db.query("users").order("desc").paginate(args.paginationOpts);
+
+    return {
+      ...users,
+      page: users.page.map(u => ({
+        _id: u._id,
+        name: u.name,
+        email: u.email,
+        role: u.role || "user",
+        status: u.status || "active",
+        statusReason: u.statusReason,
+        joined: u._creationTime,
+        lastLoginAt: u.lastLoginAt,
+      }))
+    };
+  },
+});
+
+export const getRecentUsers = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const limit = args.limit || 5;
+
+    const users = await ctx.db.query("users").order("desc").take(limit);
 
     return users.map(u => ({
       _id: u._id,
@@ -427,11 +475,10 @@ export const getAllUsers = query({
       email: u.email,
       role: u.role || "user",
       status: u.status || "active",
-      statusReason: u.statusReason,
       joined: u._creationTime,
       lastLoginAt: u.lastLoginAt,
     }));
-  },
+  }
 });
 
 export const getDashboardStats = query({
@@ -501,23 +548,22 @@ export const getDashboardStats = query({
 export const getAllDomains = query({
   args: {
     search: v.optional(v.string()),
-    limit: v.optional(v.number()),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    const limit = args.limit || 100;
 
-    let domains;
+    let results;
     if (args.search) {
-      domains = await ctx.db
+      results = await ctx.db
         .query("domains")
         .withSearchIndex("search_subdomain", (q) => q.search("subdomain", args.search!))
-        .take(limit);
+        .paginate(args.paginationOpts);
     } else {
-      domains = await ctx.db.query("domains").order("desc").take(limit);
+      results = await ctx.db.query("domains").order("desc").paginate(args.paginationOpts);
     }
 
-    return await Promise.all(domains.map(async (d) => {
+    const pageWithUserInfo = await Promise.all(results.page.map(async (d) => {
       let ownerEmail = d.ownerEmail;
       let ownerName = undefined;
 
@@ -539,6 +585,11 @@ export const getAllDomains = query({
         createdAt: d._creationTime
       };
     }));
+
+    return {
+      ...results,
+      page: pageWithUserInfo
+    };
   },
 });
 
@@ -796,5 +847,29 @@ export const getActivityTimelineData = query({
 
     return data;
   }
+});
+
+import { internal } from "./_generated/api";
+
+/**
+ * Create a subdomain (Admin only, bypasses Turnstile)
+ */
+export const createDomain = mutation({
+  args: {
+    subdomain: v.string(),
+    rootDomain: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { userId } = await requireAdmin(ctx);
+
+    // Call internal claim logic directly
+    await ctx.runMutation(internal.domainsInternal.claimInternal, {
+      subdomain: args.subdomain,
+      rootDomain: args.rootDomain ?? "doofs.tech",
+      userId,
+    });
+
+    return { success: true };
+  },
 });
 

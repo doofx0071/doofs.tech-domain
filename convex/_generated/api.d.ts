@@ -19,6 +19,7 @@ import type * as dnsProvider_cloudflare from "../dnsProvider/cloudflare.js";
 import type * as domains from "../domains.js";
 import type * as domainsInternal from "../domainsInternal.js";
 import type * as emailService from "../emailService.js";
+import type * as emailTemplates_adminNotification from "../emailTemplates/adminNotification.js";
 import type * as http from "../http.js";
 import type * as lib from "../lib.js";
 import type * as platformDns from "../platformDns.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   domains: typeof domains;
   domainsInternal: typeof domainsInternal;
   emailService: typeof emailService;
+  "emailTemplates/adminNotification": typeof emailTemplates_adminNotification;
   http: typeof http;
   lib: typeof lib;
   platformDns: typeof platformDns;

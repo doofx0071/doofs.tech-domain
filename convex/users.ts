@@ -1,4 +1,5 @@
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { auth } from "./auth";
 
 export const currentUser = query({
@@ -28,5 +29,12 @@ export const completeOnboarding = mutation({
       throw new Error("Not authenticated");
     }
     await ctx.db.patch(userId, { hasCompletedOnboarding: true });
+
+    // Notify Admin of new user
+    // We utilize the scheduler to trigger the email action asynchronously
+    await ctx.scheduler.runAfter(0, internal.emailService.notifyAdmin, {
+      subject: "New User Registration",
+      message: `A new user has completed onboarding.\nUser ID: ${userId}`
+    });
   },
 });

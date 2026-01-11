@@ -3,7 +3,7 @@
  * Admin-only functions to manage platform-wide configuration
  */
 
-import { mutation, query, internalMutation } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAdmin } from "./lib";
 import { auth } from "./auth";
@@ -35,6 +35,10 @@ const DEFAULT_SETTINGS = {
     sessionTimeoutMinutes: 60,
     maxLoginAttempts: 5,
 
+    // Email Defaults
+    mailgunFromEmail: undefined, // Defaults to noreply@<domain>
+    mailgunFromName: "Doofs Tech",
+
     // User Management
     maxTotalUsers: undefined,
     defaultUserRole: "user" as "user" | "admin",
@@ -52,10 +56,38 @@ export const getSettings = query({
 
         if (!settings) {
             // Return defaults if no settings exist yet
-            return DEFAULT_SETTINGS;
+            return {
+                ...DEFAULT_SETTINGS,
+                mailgunDomain: process.env.MAILGUN_DOMAIN,
+            };
         }
 
-        return settings;
+        return {
+            ...settings,
+            mailgunDomain: settings.mailgunDomain ?? process.env.MAILGUN_DOMAIN,
+        };
+    },
+});
+
+/**
+ * Get platform settings (internal use, no auth check)
+ */
+export const internalGetSettings = internalQuery({
+    args: {},
+    handler: async (ctx) => {
+        const settings = await ctx.db.query("platform_settings").first();
+
+        if (!settings) {
+            return {
+                ...DEFAULT_SETTINGS,
+                mailgunDomain: process.env.MAILGUN_DOMAIN,
+            };
+        }
+
+        return {
+            ...settings,
+            mailgunDomain: settings.mailgunDomain ?? process.env.MAILGUN_DOMAIN,
+        };
     },
 });
 
@@ -106,6 +138,10 @@ export const updateSettings = mutation({
         mailgunEnabled: v.optional(v.boolean()),
         notifyAdminOnNewUser: v.optional(v.boolean()),
         notifyAdminOnNewDomain: v.optional(v.boolean()),
+
+        // Email Customization
+        mailgunFromEmail: v.optional(v.string()),
+        mailgunFromName: v.optional(v.string()),
 
         // Security
         requireTurnstile: v.optional(v.boolean()),

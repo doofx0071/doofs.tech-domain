@@ -211,6 +211,10 @@ const schema = defineSchema({
     notifyAdminOnNewUser: v.boolean(),
     notifyAdminOnNewDomain: v.boolean(),
 
+    // Email Customization
+    mailgunFromEmail: v.optional(v.string()),
+    mailgunFromName: v.optional(v.string()),
+
     // Security
     requireTurnstile: v.boolean(),
     sessionTimeoutMinutes: v.number(),

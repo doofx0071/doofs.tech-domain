@@ -40,10 +40,19 @@ import {
 import { chartColors, tooltipConfig, animationConfig } from "@/lib/chartConfig";
 import "@/styles/admin-dashboard.css";
 
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+
 export function AdminAuditLogs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [timeRange, setTimeRange] = useState("7d");
   const [limit] = useState(100);
+  const [selectedLog, setSelectedLog] = useState<any>(null);
 
   const auditLogs = useQuery(api.auditLogs.getAllAuditLogs, { limit });
   const stats = useQuery(api.auditLogs.getAuditLogsStats, { timeRange });
@@ -387,15 +396,16 @@ export function AdminAuditLogs() {
                   {filteredLogs.map((log) => (
                     <TableRow
                       key={log._id}
-                      className="activity-item"
+                      className="activity-item cursor-pointer hover:bg-muted/50"
+                      onClick={() => setSelectedLog(log)}
                     >
                       <TableCell className="font-mono text-xs whitespace-nowrap hidden sm:table-cell">
                         {formatTimestamp(log.timestamp)}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div>
-                          <p className="font-medium whitespace-nowrap">{log.userName}</p>
-                          <p className="text-xs text-muted-foreground">{log.userEmail}</p>
+                          <div className="font-medium whitespace-nowrap">{log.userName || "Unknown"}</div>
+                          <div className="text-xs text-muted-foreground">{log.userEmail || "No email"}</div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -407,21 +417,7 @@ export function AdminAuditLogs() {
                         </div>
                       </TableCell>
                       <TableCell className="max-w-[120px] sm:max-w-xs">
-                        <p className="text-sm truncate">{log.details || "No details"}</p>
-                        {log.metadata && (
-                          <div className="text-xs text-muted-foreground mt-1 hidden sm:block">
-                            {log.metadata.oldValue && (
-                              <p className="truncate max-w-[200px]">
-                                Old: <span className="font-mono">{log.metadata.oldValue}</span>
-                              </p>
-                            )}
-                            {log.metadata.newValue && (
-                              <p className="truncate max-w-[200px]">
-                                New: <span className="font-mono">{log.metadata.newValue}</span>
-                              </p>
-                            )}
-                          </div>
-                        )}
+                        <div className="text-sm truncate">{log.details || "No details"}</div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Badge variant={getStatusBadgeColor(log.status)}>
@@ -436,6 +432,89 @@ export function AdminAuditLogs() {
           </ScrollArea>
         </CardContent>
       </Card>
+
+      {/* Log Details Sheet */}
+      <Sheet open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Audit Log Details</SheetTitle>
+            <SheetDescription>
+              Complete information about this system event.
+            </SheetDescription>
+          </SheetHeader>
+
+          {selectedLog && (
+            <div className="mt-6 space-y-6">
+              {/* Header Info */}
+              <div className="space-y-1">
+                <Badge variant={getActionBadgeColor(selectedLog.action)} className="mb-2">
+                  {selectedLog.action.replace(/_/g, " ")}
+                </Badge>
+                <h3 className="font-medium leading-none text-lg">
+                  {selectedLog.details || "No details provided"}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {formatTimestamp(selectedLog.timestamp)}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Status</span>
+                  <div className="mt-1">
+                    <Badge variant={getStatusBadgeColor(selectedLog.status)}>
+                      {selectedLog.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Ref ID</span>
+                  <div className="mt-1 font-mono text-xs truncate" title={selectedLog._id}>
+                    {selectedLog._id}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border bg-card text-card-foreground shadow-sm rounded-lg p-4">
+                <div className="text-sm font-medium mb-2 text-muted-foreground">Actor</div>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                    {selectedLog.userName ? selectedLog.userName.charAt(0).toUpperCase() : "?"}
+                  </div>
+                  <div className="overflow-hidden">
+                    <div className="font-medium truncate">{selectedLog.userName || "System / Unknown"}</div>
+                    {selectedLog.userEmail && (
+                      <div className="text-xs text-muted-foreground truncate">{selectedLog.userEmail}</div>
+                    )}
+                    {selectedLog.userId && (
+                      <div className="text-[10px] text-muted-foreground font-mono truncate">{selectedLog.userId}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Metadata */}
+              {selectedLog.metadata && (Object.keys(selectedLog.metadata).length > 0) && (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-muted-foreground">Metadata Changes</div>
+                  <div className="bg-muted/50 rounded-md p-3 text-xs font-mono overflow-x-auto">
+                    <pre>{JSON.stringify(selectedLog.metadata, null, 2)}</pre>
+                  </div>
+                </div>
+              )}
+
+              {/* Raw Data (Optional, collapsable or just full JSON) */}
+              <div className="pt-4 border-t">
+                <div className="text-xs text-muted-foreground mb-2">Raw Log Data</div>
+                <div className="bg-muted/30 rounded-md p-2 text-[10px] font-mono overflow-x-auto max-h-[200px]">
+                  <pre>{JSON.stringify(selectedLog, null, 2)}</pre>
+                </div>
+              </div>
+
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

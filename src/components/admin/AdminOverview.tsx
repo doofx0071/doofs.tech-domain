@@ -21,7 +21,7 @@ import "@/styles/admin-dashboard.css";
 
 export function AdminOverview() {
   const stats = useQuery(api.admin.getDashboardStats);
-  const recentUsers = useQuery(api.admin.getAllUsers, { limit: 5 });
+  const recentUsers = useQuery(api.admin.getRecentUsers, { limit: 5 });
   const recentDomains = useQuery(api.admin.getRecentDomains, { limit: 5 });
   const userGrowthData = useQuery(api.admin.getUserGrowthData, { days: 30 });
   const domainGrowthData = useQuery(api.admin.getDomainCreationData, { days: 30 });

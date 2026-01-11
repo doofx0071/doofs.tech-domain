@@ -156,6 +156,20 @@ export function validateSettingsUpdate(updates: Record<string, any>) {
         }
     }
 
+    if (updates.mailgunFromEmail !== undefined) {
+        const email = updates.mailgunFromEmail.trim();
+        if (email && !email.includes("@")) {
+            throw new Error("Invalid 'From Email' format");
+        }
+    }
+
+    if (updates.mailgunFromName !== undefined) {
+        const name = updates.mailgunFromName.trim();
+        if (name.length > 50) {
+            throw new Error("'From Name' must be under 50 characters");
+        }
+    }
+
     return true;
 }
 
