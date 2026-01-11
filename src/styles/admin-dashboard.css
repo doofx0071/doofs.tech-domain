@@ -1,0 +1,216 @@
+/**
+ * Admin Dashboard Custom Styles
+ * Glassmorphism, gradients, and modern design elements
+ */
+
+/* Gradient Backgrounds */
+:root {
+  --gradient-primary: linear-gradient(135deg, hsl(262, 83%, 58%) 0%, hsl(243, 75%, 59%) 100%);
+  --gradient-success: linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(158, 64%, 52%) 100%);
+  --gradient-warning: linear-gradient(135deg, hsl(45, 93%, 47%) 0%, hsl(32, 95%, 44%) 100%);
+  --gradient-danger: linear-gradient(135deg, hsl(348, 83%, 47%) 0%, hsl(11, 93%, 54%) 100%);
+  --gradient-info: linear-gradient(135deg, hsl(199, 89%, 48%) 0%, hsl(217, 91%, 60%) 100%);
+  
+  /* Glassmorphism */
+  --glass-bg: hsla(0, 0%, 100%, 0.05);
+  --glass-bg-strong: hsla(0, 0%, 100%, 0.08);
+  --glass-border: hsla(0, 0%, 100%, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  
+  /* Dark mode specific */
+  --admin-bg-base: hsl(222, 47%, 11%);
+  --admin-bg-elevated: hsl(222, 47%, 14%);
+  --admin-text-primary: hsl(0, 0%, 95%);
+  --admin-text-secondary: hsl(0, 0%, 70%);
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-card-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Gradient Stat Cards */
+.stat-card-primary {
+  background: var(--gradient-primary);
+  border: none;
+  color: white;
+}
+
+.stat-card-success {
+  background: var(--gradient-success);
+  border: none;
+  color: white;
+}
+
+.stat-card-warning {
+  background: var(--gradient-warning);
+  border: none;
+  color: white;
+}
+
+.stat-card-danger {
+  background: var(--gradient-danger);
+  border: none;
+  color: white;
+}
+
+.stat-card-info {
+  background: var(--gradient-info);
+  border: none;
+  color: white;
+}
+
+/* Stat Card Icon Background */
+.stat-icon-bg {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Animated Counter */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animated-counter {
+  animation: countUp 0.6s ease-out;
+}
+
+/* Trend Indicators */
+.trend-up {
+  color: hsl(142, 76%, 56%);
+}
+
+.trend-down {
+  color: hsl(348, 83%, 67%);
+}
+
+/* Hover Effects */
+.hover-lift {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Chart Container */
+.chart-container {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--glass-shadow);
+}
+
+/* Loading Skeleton */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(0, 0%, 15%) 0%,
+    hsl(0, 0%, 20%) 50%,
+    hsl(0, 0%, 15%) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 4px;
+}
+
+/* Activity Feed */
+.activity-item {
+  transition: background-color 0.2s ease;
+}
+
+.activity-item:hover {
+  background-color: var(--glass-bg-strong);
+}
+
+/* Badge Glow Effect */
+.badge-glow {
+  box-shadow: 0 0 20px currentColor;
+}
+
+/* Responsive Grid Helpers */
+@media (max-width: 768px) {
+  .admin-grid-mobile {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .chart-container {
+    padding: 16px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .admin-grid-tablet {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Scrollbar Styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: hsl(0, 0%, 10%);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(0, 0%, 30%);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(0, 0%, 40%);
+}
+
+/* Pulse Animation for Real-time Updates */
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.realtime-indicator {
+  animation: pulse-dot 2s infinite;
+}

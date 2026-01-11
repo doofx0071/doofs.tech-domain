@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
 import logoLight from "@/assets/doofs-logo-light.svg";
 import logoDark from "@/assets/doofs-logo-dark.svg";
+import "@/styles/admin-dashboard.css";
 
 const AdminDashboard = () => {
   const { theme, toggleTheme } = useTheme();

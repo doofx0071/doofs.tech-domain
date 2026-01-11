@@ -1,14 +1,30 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, Globe, Activity, TrendingUp } from "lucide-react";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { StatCard } from "./StatCard";
+import { ChartContainer } from "./ChartContainer";
+import { Users, Globe, Activity, TrendingUp, Clock, AlertCircle } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+import { chartColors, tooltipConfig, animationConfig } from "@/lib/chartConfig";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import "@/styles/admin-dashboard.css";
 
 export function AdminOverview() {
   const stats = useQuery(api.admin.getDashboardStats);
   const recentUsers = useQuery(api.admin.getAllUsers, { limit: 5 });
   const recentDomains = useQuery(api.admin.getRecentDomains, { limit: 5 });
+  const userGrowthData = useQuery(api.admin.getUserGrowthData, { days: 30 });
+  const domainGrowthData = useQuery(api.admin.getDomainCreationData, { days: 30 });
 
   if (!stats) {
     return (
@@ -19,56 +35,184 @@ export function AdminOverview() {
   }
 
   const statCards = [
-    { label: "Total Users", value: stats.totalUsers ?? 0, icon: Users, change: "0%" },
-    { label: "Active Domains", value: stats.activeDomains ?? 0, icon: Globe, change: "0%" },
-    { label: "DNS Records", value: stats.dnsRecords ?? 0, icon: Activity, change: "0%" },
-    { label: "Uptime", value: stats.uptime, icon: TrendingUp, change: "0%" },
+    {
+      title: "Total Users",
+      value: stats.totalUsers,
+      icon: Users,
+      variant: "primary" as const,
+      trend: {
+        value: `${stats.userGrowthRate7d}%`,
+        isPositive: parseFloat(stats.userGrowthRate7d) > 0,
+      },
+    },
+    {
+      title: "Active Domains",
+      value: stats.activeDomains,
+      icon: Globe,
+      variant: "success" as const,
+      trend: {
+        value: `${stats.domainGrowthRate7d}%`,
+        isPositive: parseFloat(stats.domainGrowthRate7d) > 0,
+      },
+    },
+    {
+      title: "DNS Records",
+      value: stats.dnsRecords,
+      icon: Activity,
+      variant: "info" as const,
+      trend: {
+        value: `${stats.dnsSuccessRate}% success`,
+        isPositive: parseFloat(stats.dnsSuccessRate) > 95,
+      },
+    },
+    {
+      title: "Success Rate",
+      value: `${stats.successRate}%`,
+      icon: TrendingUp,
+      variant: parseFloat(stats.successRate) > 95 ? "success" as const : "warning" as const,
+      trend: {
+        value: `${stats.totalActionsLast7Days} actions`,
+        isPositive: true,
+      },
+    },
   ];
+
+  // Combine user and domain data for activity chart
+  const combinedActivityData = userGrowthData && domainGrowthData
+    ? userGrowthData.map((userData, index) => ({
+      ...userData,
+      domains: domainGrowthData[index]?.total || 0,
+      users: userData.count,
+    }))
+    : [];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Overview</h1>
-        <p className="text-muted-foreground">Platform statistics at a glance.</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
+          <p className="text-muted-foreground mt-1">
+            Platform statistics and real-time insights
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="realtime-indicator h-2 w-2 rounded-full bg-green-500" />
+          <span className="text-sm text-muted-foreground">Live</span>
+        </div>
       </div>
 
+      {/* Stat Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => (
-          <Card key={stat.label}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.label}
-              </CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-500">{stat.change}</span> from last month
-              </p>
-            </CardContent>
-          </Card>
+          <StatCard key={stat.title} {...stat} />
         ))}
       </div>
 
+      {/* Activity Overview Chart */}
+      <ChartContainer
+        title="Platform Activity (Last 30 Days)"
+        description="User signups and domain creation trends"
+        isLoading={!combinedActivityData.length}
+      >
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={combinedActivityData}>
+            <defs>
+              <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.8} />
+                <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="colorDomains" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={chartColors.success} stopOpacity={0.8} />
+                <stop offset="95%" stopColor={chartColors.success} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+            <XAxis dataKey="label" stroke={chartColors.axis} style={{ fontSize: 12 }} />
+            <YAxis stroke={chartColors.axis} style={{ fontSize: 12 }} />
+            <Tooltip {...tooltipConfig} />
+            <Legend />
+            <Area
+              type="monotone"
+              dataKey="users"
+              name="New Users"
+              stroke={chartColors.primary}
+              fillOpacity={1}
+              fill="url(#colorUsers)"
+              animationDuration={animationConfig.duration}
+            />
+            <Area
+              type="monotone"
+              dataKey="domains"
+              name="New Domains"
+              stroke={chartColors.success}
+              fillOpacity={1}
+              fill="url(#colorDomains)"
+              animationDuration={animationConfig.duration}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartContainer>
+
+      {/* Quick Stats and Activity Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        {/* System Health */}
+        <Card className="glass-card">
           <CardHeader>
-            <CardTitle>Recent Users</CardTitle>
-            <CardDescription>Latest user signups</CardDescription>
+            <CardTitle className="text-lg">System Health</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Uptime</span>
+              </div>
+              <Badge variant="default" className="badge-glow">
+                {stats.uptime}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Active DNS Records</span>
+              </div>
+              <Badge variant="default">{stats.activeDnsRecords}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Error Records</span>
+              </div>
+              <Badge variant={stats.errorDnsRecords > 0 ? "destructive" : "secondary"}>
+                {stats.errorDnsRecords}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t">
+              <span className="text-sm font-medium">Inactive Domains</span>
+              <Badge variant="secondary">{stats.inactiveDomains}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity Feed */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-3 custom-scrollbar max-h-[200px] overflow-y-auto">
               {!recentUsers ? (
                 <p className="text-sm text-muted-foreground">Loading...</p>
               ) : recentUsers.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No users found.</p>
+                <p className="text-sm text-muted-foreground">No recent activity</p>
               ) : (
                 recentUsers.map((user: any) => (
-                  <div key={user._id} className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-xs">{user.email}</p>
-                      <p className="text-xs text-muted-foreground">Joined {new Date(user.joined || 0).toLocaleDateString()}</p>
+                  <div key={user._id} className="activity-item flex items-center justify-between p-2 rounded-lg">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Joined {new Date(user.joined || 0).toLocaleDateString()}
+                      </p>
                     </div>
                     <Badge variant={user.role === "admin" ? "default" : "secondary"}>
                       {user.role}
@@ -79,42 +223,42 @@ export function AdminOverview() {
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Domains</CardTitle>
-            <CardDescription>Latest domain registrations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {!recentDomains ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : recentDomains.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No domains found.</p>
-              ) : (
-                recentDomains.map((domain: any) => (
-                  <div key={domain._id} className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-xs">{domain.subdomain}.doofs.tech</p>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground truncate" title={domain.ownerEmail}>
-                          {domain.ownerName || domain.ownerEmail || "No owner"}
-                        </span>
-                        {domain.ownerName && (
-                          <span className="text-[10px] text-muted-foreground/70 truncate">{domain.ownerEmail}</span>
-                        )}
-                      </div>
-                    </div>
-                    <Badge variant={domain.status === "active" ? "default" : "secondary"}>
-                      {domain.status}
-                    </Badge>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Recent Domains */}
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-lg">Recent Domains</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {!recentDomains ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : recentDomains.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No domains yet</p>
+            ) : (
+              recentDomains.map((domain: any) => (
+                <div
+                  key={domain._id}
+                  className="activity-item flex items-center justify-between p-3 rounded-lg border border-border"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">
+                      {domain.subdomain}.doofs.tech
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {domain.ownerName || domain.ownerEmail || "No owner"}
+                    </p>
+                  </div>
+                  <Badge variant={domain.status === "active" ? "default" : "secondary"}>
+                    {domain.status}
+                  </Badge>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

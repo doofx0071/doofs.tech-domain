@@ -33,7 +33,7 @@ export const Header = () => {
   // Get avatar configuration
   const getAvatarConfig = () => {
     if (!user) return { variant: "marble", colors: ["#92A1C6", "#146A7C", "#F0AB3D", "#C271B4", "#C20D90"], name: "User" };
-    
+
     const palettes: Record<string, string[]> = {
       "0": ["#92A1C6", "#146A7C", "#F0AB3D", "#C271B4", "#C20D90"],
       "1": ["#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51"],
@@ -42,12 +42,12 @@ export const Header = () => {
       "4": ["#7209b7", "#560bad", "#b5179e", "#f72585", "#4361ee"],
       "5": ["#e0b0ff", "#b4e4ff", "#ffe4e1", "#f0e68c", "#d8bfd8"],
     };
-    
+
     const avatarVariant = user.avatarVariant || "marble";
     const avatarSeed = user.avatar || user.name || "User";
     const paletteIndex = avatarSeed.split("-")[1] || "0";
     const colors = palettes[paletteIndex] || palettes["0"];
-    
+
     return {
       variant: avatarVariant,
       colors,
@@ -63,10 +63,10 @@ export const Header = () => {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b-2 border-border">
       <div className="container max-w-7xl mx-auto flex items-center justify-between h-14 md:h-16 px-4 md:px-6">
         <a href="/" className="flex items-center gap-1.5 md:gap-2 font-mono font-bold text-base md:text-xl tracking-tight">
-          <img 
+          <img
             key={theme}
-            src={theme === "dark" ? logoDark : logoLight} 
-            alt="doofs.tech logo" 
+            src={theme === "dark" ? logoDark : logoLight}
+            alt="doofs.tech logo"
             className="h-6 md:h-8 w-auto"
           />
           <span>doofs<span className="text-muted-foreground text-[10px] sm:text-xs">.tech</span></span>
@@ -79,6 +79,9 @@ export const Header = () => {
           </Link>
           <Link to="/docs" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">
             Docs
+          </Link>
+          <Link to="/tutorials" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">
+            Tutorials
           </Link>
           <Button
             variant="ghost"
@@ -93,7 +96,7 @@ export const Header = () => {
             )}
             <span className="sr-only">Toggle theme</span>
           </Button>
-          
+
           {isAuthenticated && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

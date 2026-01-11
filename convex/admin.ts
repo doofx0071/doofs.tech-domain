@@ -439,18 +439,61 @@ export const getDashboardStats = query({
   handler: async (ctx) => {
     await requireAdmin(ctx);
 
-    const userCount = (await ctx.db.query("users").collect()).length;
-    const domainCount = (await ctx.db.query("domains").collect()).length;
-    const recordCount = (await ctx.db.query("dns_records").collect()).length;
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
 
-    // Simple uptime mock since we don't monitor it
-    const uptime = "99.9%";
+    // Get all data
+    const allUsers = await ctx.db.query("users").collect();
+    const allDomains = await ctx.db.query("domains").collect();
+    const allRecords = await ctx.db.query("dns_records").collect();
+    const recentAuditLogs = await ctx.db
+      .query("auditLogs")
+      .withIndex("by_timestamp")
+      .filter((q) => q.gte(q.field("timestamp"), sevenDaysAgo))
+      .collect();
+
+    // User metrics
+    const totalUsers = allUsers.length;
+    const newUsersLast7Days = allUsers.filter(u => u._creationTime >= sevenDaysAgo).length;
+    const newUsersLast30Days = allUsers.filter(u => u._creationTime >= thirtyDaysAgo).length;
+    const userGrowthRate7d = totalUsers > 0 ? ((newUsersLast7Days / totalUsers) * 100).toFixed(1) : "0";
+
+    // Domain metrics
+    const activeDomains = allDomains.filter(d => d.status === "active").length;
+    const inactiveDomains = allDomains.filter(d => d.status === "inactive").length;
+    const newDomainsLast7Days = allDomains.filter(d => d._creationTime >= sevenDaysAgo).length;
+    const domainGrowthRate7d = allDomains.length > 0 ? ((newDomainsLast7Days / allDomains.length) * 100).toFixed(1) : "0";
+
+    // DNS metrics
+    const totalDnsRecords = allRecords.length;
+    const activeDnsRecords = allRecords.filter(r => r.status === "active").length;
+    const errorDnsRecords = allRecords.filter(r => r.status === "error").length;
+    const dnsSuccessRate = totalDnsRecords > 0 ? ((activeDnsRecords / totalDnsRecords) * 100).toFixed(1) : "100";
+
+    // Activity metrics
+    const successfulActions = recentAuditLogs.filter(log => log.status === "success").length;
+    const failedActions = recentAuditLogs.filter(log => log.status === "failed").length;
+    const totalActions = recentAuditLogs.length;
+    const successRate = totalActions > 0 ? ((successfulActions / totalActions) * 100).toFixed(1) : "100";
 
     return {
-      totalUsers: userCount,
-      activeDomains: domainCount,
-      dnsRecords: recordCount,
-      uptime
+      totalUsers,
+      newUsersLast7Days,
+      newUsersLast30Days,
+      userGrowthRate7d,
+      activeDomains,
+      inactiveDomains,
+      totalDomains: allDomains.length,
+      newDomainsLast7Days,
+      domainGrowthRate7d,
+      dnsRecords: totalDnsRecords,
+      activeDnsRecords,
+      errorDnsRecords,
+      dnsSuccessRate,
+      totalActionsLast7Days: totalActions,
+      successRate,
+      uptime: "99.9%",
     };
   }
 });
@@ -530,3 +573,228 @@ export const getRecentDomains = query({
     }));
   }
 });
+
+/**
+ * Get user growth data for charts (daily signups over time)
+ */
+export const getUserGrowthData = query({
+  args: {
+    days: v.optional(v.number()), // defaults to 30
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    const days = args.days || 30;
+    const now = Date.now();
+    const startTime = now - days * 24 * 60 * 60 * 1000;
+
+    const users = await ctx.db
+      .query("users")
+      .filter((q) => q.gte(q.field("_creationTime"), startTime))
+      .collect();
+
+    // Group by day
+    const dailyGroups: Record<string, number> = {};
+
+    for (let i = 0; i < days; i++) {
+      const date = new Date(now - i * 24 * 60 * 60 * 1000);
+      const dateKey = date.toISOString().split('T')[0];
+      dailyGroups[dateKey] = 0;
+    }
+
+    users.forEach(user => {
+      const date = new Date(user._creationTime);
+      const dateKey = date.toISOString().split('T')[0];
+      if (dailyGroups.hasOwnProperty(dateKey)) {
+        dailyGroups[dateKey]++;
+      }
+    });
+
+    // Convert to array and sort
+    const data = Object.entries(dailyGroups)
+      .map(([date, count]) => ({
+        date,
+        count,
+        label: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return data;
+  }
+});
+
+/**
+ * Get domain creation data for charts (daily domain creation over time)
+ */
+export const getDomainCreationData = query({
+  args: {
+    days: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    const days = args.days || 30;
+    const now = Date.now();
+    const startTime = now - days * 24 * 60 * 60 * 1000;
+
+    const domains = await ctx.db
+      .query("domains")
+      .filter((q) => q.gte(q.field("_creationTime"), startTime))
+      .collect();
+
+    // Group by day and status
+    const dailyGroups: Record<string, { active: number; inactive: number }> = {};
+
+    for (let i = 0; i < days; i++) {
+      const date = new Date(now - i * 24 * 60 * 60 * 1000);
+      const dateKey = date.toISOString().split('T')[0];
+      dailyGroups[dateKey] = { active: 0, inactive: 0 };
+    }
+
+    domains.forEach(domain => {
+      const date = new Date(domain._creationTime);
+      const dateKey = date.toISOString().split('T')[0];
+      if (dailyGroups.hasOwnProperty(dateKey)) {
+        if (domain.status === "active") {
+          dailyGroups[dateKey].active++;
+        } else {
+          dailyGroups[dateKey].inactive++;
+        }
+      }
+    });
+
+    // Convert to array
+    const data = Object.entries(dailyGroups)
+      .map(([date, counts]) => ({
+        date,
+        active: counts.active,
+        inactive: counts.inactive,
+        total: counts.active + counts.inactive,
+        label: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return data;
+  }
+});
+
+/**
+ * Get DNS operations data for charts (by record type)
+ */
+export const getDnsOperationsData = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+
+    const records = await ctx.db.query("dns_records").collect();
+
+    // Group by type and status
+    const typeGroups: Record<string, { success: number; error: number }> = {
+      A: { success: 0, error: 0 },
+      AAAA: { success: 0, error: 0 },
+      CNAME: { success: 0, error: 0 },
+      TXT: { success: 0, error: 0 },
+      MX: { success: 0, error: 0 },
+    };
+
+    records.forEach(record => {
+      if (typeGroups.hasOwnProperty(record.type)) {
+        if (record.status === "active") {
+          typeGroups[record.type].success++;
+        } else if (record.status === "error") {
+          typeGroups[record.type].error++;
+        }
+      }
+    });
+
+    // Convert to array
+    const data = Object.entries(typeGroups).map(([type, counts]) => ({
+      type,
+      success: counts.success,
+      error: counts.error,
+      total: counts.success + counts.error,
+    }));
+
+    return data;
+  }
+});
+
+/**
+ * Get activity timeline data for charts (hourly activity)
+ */
+export const getActivityTimelineData = query({
+  args: {
+    timeRange: v.optional(v.string()), // "24h", "7d", "30d"
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    const timeRange = args.timeRange || "24h";
+    let startTime = Date.now();
+    let hours = 24;
+
+    switch (timeRange) {
+      case "24h":
+        startTime -= 24 * 60 * 60 * 1000;
+        hours = 24;
+        break;
+      case "7d":
+        startTime -= 7 * 24 * 60 * 60 * 1000;
+        hours = 7 * 24;
+        break;
+      case "30d":
+        startTime -= 30 * 24 * 60 * 60 * 1000;
+        hours = 30 * 24;
+        break;
+    }
+
+    const logs = await ctx.db
+      .query("auditLogs")
+      .withIndex("by_timestamp")
+      .filter((q) => q.gte(q.field("timestamp"), startTime))
+      .collect();
+
+    // Group by hour
+    const hourlyGroups: Record<string, { success: number; failed: number }> = {};
+
+    for (let i = 0; i < hours; i++) {
+      const time = new Date(Date.now() - i * 60 * 60 * 1000);
+      const hourKey = time.toISOString().slice(0, 13); // YYYY-MM-DDTHH
+      hourlyGroups[hourKey] = { success: 0, failed: 0 };
+    }
+
+    logs.forEach(log => {
+      const time = new Date(log.timestamp);
+      const hourKey = time.toISOString().slice(0, 13);
+      if (hourlyGroups.hasOwnProperty(hourKey)) {
+        if (log.status === "success") {
+          hourlyGroups[hourKey].success++;
+        } else {
+          hourlyGroups[hourKey].failed++;
+        }
+      }
+    });
+
+    // Convert to array and sort
+    const data = Object.entries(hourlyGroups)
+      .map(([hour, counts]) => {
+        const date = new Date(hour);
+        return {
+          hour,
+          success: counts.success,
+          failed: counts.failed,
+          total: counts.success + counts.failed,
+          label: date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            hour12: true
+          })
+        };
+      })
+      .sort((a, b) => a.hour.localeCompare(b.hour));
+
+    return data;
+  }
+});
+

@@ -19,6 +19,7 @@ import Docs from "./pages/Docs";
 import Contact from "./pages/Contact";
 import AdminDashboard from "./pages/AdminDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
+import Tutorials from "./pages/Tutorials";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/about" element={<About />} />
               <Route path="/docs" element={<Docs />} />
+              <Route path="/tutorials" element={<Tutorials />} />
               <Route path="/contact" element={<Contact />} />
               <Route
                 path={`${adminRoute}/dashboard/*`}
