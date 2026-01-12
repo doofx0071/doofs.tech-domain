@@ -228,6 +228,37 @@ const schema = defineSchema({
     updatedAt: v.number(),
     updatedBy: v.id("users"),
   }),
+
+  // API Keys for Developer Access
+  api_keys: defineTable({
+    userId: v.id("users"),
+    name: v.string(), // e.g., "CI/CD Pipeline"
+    keyHash: v.string(), // SHA-256 hash of the key
+    prefix: v.string(), // First 8 chars for identification
+    lastUsedAt: v.optional(v.number()),
+    scopes: v.array(v.string()), // e.g., ["domains:read", "domains:write"]
+    createdAt: v.number(),
+    status: v.union(v.literal("active"), v.literal("revoked")),
+  })
+    .index("by_user", ["userId"])
+    .index("by_key_hash", ["keyHash"]),
+
+  // API Request Logs for Usage Tracking
+  api_requests: defineTable({
+    keyId: v.optional(v.id("api_keys")), // Optional in case we log failed auth attempts without a valid key
+    userId: v.optional(v.id("users")),
+    endpoint: v.string(),
+    method: v.string(),
+    status: v.number(),
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    timestamp: v.number(),
+    durationMs: v.optional(v.number()),
+  })
+    .index("by_key", ["keyId"])
+    .index("by_user", ["userId"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_user_timestamp", ["userId", "timestamp"]),
 });
 
 export default schema;

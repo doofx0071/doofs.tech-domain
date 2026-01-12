@@ -11,6 +11,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import Docs from "./pages/Docs";
+import ApiDocs from "./pages/ApiDocs";
 import Contact from "./pages/Contact";
 import AdminDashboard from "./pages/AdminDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
@@ -31,6 +32,7 @@ export const AppRoutes = () => {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/about" element={<About />} />
             <Route path="/docs" element={<Docs />} />
+            <Route path="/api" element={<ApiDocs />} />
             <Route path="/tutorials" element={<Tutorials />} />
             <Route path="/contact" element={<Contact />} />
             <Route

@@ -6,6 +6,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Link } from "react-router-dom";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ClientApiUsage } from "./ClientApiUsage";
 
 export function ClientOverview() {
   const stats = useQuery(api.dns.getMyStats);
@@ -70,6 +71,8 @@ export function ClientOverview() {
           </CardContent>
         </Card>
       </div>
+
+      <ClientApiUsage />
 
       <Card>
         <CardHeader>

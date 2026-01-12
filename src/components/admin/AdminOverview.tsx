@@ -3,6 +3,7 @@ import { api } from "../../../convex/_generated/api";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { StatCard } from "./StatCard";
 import { ChartContainer } from "./ChartContainer";
+import { AdminApiUsage } from "./AdminApiUsage";
 import { Users, Globe, Activity, TrendingUp, Clock, AlertCircle } from "lucide-react";
 import {
   AreaChart,
@@ -108,6 +109,9 @@ export function AdminOverview() {
           <StatCard key={stat.title} {...stat} />
         ))}
       </div>
+
+      {/* API Usage Section */}
+      <AdminApiUsage />
 
       {/* Activity Overview Chart */}
       <ChartContainer

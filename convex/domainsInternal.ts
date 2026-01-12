@@ -36,6 +36,31 @@ export const getDomainWithRecords = internalQuery({
     },
 });
 
+export const getInternal = internalQuery({
+    args: {
+        domainId: v.id("domains"),
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const domain = await ctx.db.get(args.domainId);
+        if (!domain) return null;
+        if (domain.userId !== args.userId) return null;
+        return domain;
+    },
+});
+
+export const listByUserInternal = internalQuery({
+    args: { userId: v.id("users") },
+    handler: async (ctx, args) => {
+        const domains = await ctx.db
+            .query("domains")
+            .withIndex("by_user", (q) => q.eq("userId", args.userId))
+            .order("desc")
+            .collect();
+
+        return domains;
+    },
+});
 
 export const claimInternal = internalMutation({
     args: {

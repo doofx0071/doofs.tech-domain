@@ -80,6 +80,9 @@ export const Header = () => {
           <Link to="/docs" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">
             Docs
           </Link>
+          <Link to="/api" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">
+            API
+          </Link>
           <Link to="/tutorials" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">
             Tutorials
           </Link>

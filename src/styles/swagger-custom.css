@@ -1,0 +1,19 @@
+/* Swagger UI Customization for generic dark mode compatibility */
+.swagger-ui {
+    font-family: inherit;
+}
+
+/* Dark mode adjustments - naive approach since SwaggerUI doesn't support dark mode natively well without filter */
+/* We will invert colors for dark mode if easily possible, otherwise we accept white bg for docs inside the card */
+
+.swagger-ui .info .title,
+.swagger-ui .info h1,
+.swagger-ui .info h2,
+.swagger-ui .info h3,
+.swagger-ui .info h4,
+.swagger-ui .info h5 {
+    color: inherit;
+}
+
+/* Force light theme inside the container for readability if we don't want to fight the CSS */
+/* OR simpler: just let it be light inside the card, as configured in the TSX (white bg) */

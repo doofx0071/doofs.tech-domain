@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { DeveloperSettings } from "./settings/DeveloperSettings";
 
 export function ClientSettings() {
   const user = useQuery(api.users.currentUser);
@@ -161,6 +162,9 @@ export function ClientSettings() {
           <Button onClick={handleProfileSave} data-tour="settings-save-btn">Save Changes</Button>
         </CardContent>
       </Card>
+
+      {/* Developer Settings */}
+      <DeveloperSettings />
 
       {/* Only show Connected Accounts if user has GitHub */}
       {hasGitHub && (

@@ -9,11 +9,13 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as apiKeys from "../apiKeys.js";
 import type * as auditLogs from "../auditLogs.js";
 import type * as auth from "../auth.js";
 import type * as contact from "../contact.js";
 import type * as crons from "../crons.js";
 import type * as dns from "../dns.js";
+import type * as dnsInternal from "../dnsInternal.js";
 import type * as dnsJobs from "../dnsJobs.js";
 import type * as dnsProvider_cloudflare from "../dnsProvider/cloudflare.js";
 import type * as domains from "../domains.js";
@@ -39,11 +41,13 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  apiKeys: typeof apiKeys;
   auditLogs: typeof auditLogs;
   auth: typeof auth;
   contact: typeof contact;
   crons: typeof crons;
   dns: typeof dns;
+  dnsInternal: typeof dnsInternal;
   dnsJobs: typeof dnsJobs;
   "dnsProvider/cloudflare": typeof dnsProvider_cloudflare;
   domains: typeof domains;
