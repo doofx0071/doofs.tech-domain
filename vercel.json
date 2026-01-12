@@ -1,6 +1,10 @@
 {
     "rewrites": [
         {
+            "source": "/api/(.*)",
+            "destination": "https://ceaseless-opossum-708.convex.site/api/$1"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }
