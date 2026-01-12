@@ -7,6 +7,7 @@ import { auth } from "./auth";
  */
 export const createAuditLog = internalMutation({
   args: {
+    userId: v.optional(v.id("users")),
     action: v.string(),
     details: v.optional(v.string()),
     metadata: v.optional(
@@ -20,11 +21,16 @@ export const createAuditLog = internalMutation({
     status: v.string(), // "success" or "failed"
   },
   handler: async (ctx, args) => {
-    // For internal mutations, we need to get the userId from the context
-    // Since this is called from actions, the userId should be passed in the action context
-    const userId = await auth.getUserId(ctx);
+    // If userId not provided, try to get from auth context (fallback)
+    const userId = args.userId || await auth.getUserId(ctx);
+
+    // If we still don't have a user, we can't log to auditLogs (requires userId)
+    // We might log a warning or just return. But for API calls, userId is always passed.
     if (!userId) {
-      throw new Error("User must be authenticated");
+      // Allow specific system actions or throw? 
+      // For now, fail safe.
+      console.warn("createAuditLog called without userId");
+      return { success: false };
     }
 
     await ctx.db.insert("auditLogs", {

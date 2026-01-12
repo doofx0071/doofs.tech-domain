@@ -230,11 +230,21 @@ export const validateKey = internalQuery({
     },
 });
 
+import { checkRateLimit } from "./ratelimit";
+
 export const updateUsage = internalMutation({
     args: {
         keyId: v.id("api_keys"),
+        userId: v.id("users"),
     },
     handler: async (ctx, args) => {
+        // Enforce Rate Limit
+        const settings = await getSettingsOrDefaults(ctx);
+        const limit = settings.maxApiRequestsPerMinute;
+
+        // This will throw an error if limit is exceeded
+        await checkRateLimit(ctx, args.userId, "api_limit", limit, 60 * 1000);
+
         await ctx.db.patch(args.keyId, {
             lastUsedAt: Date.now(),
         });

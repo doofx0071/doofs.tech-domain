@@ -151,8 +151,20 @@ async function authenticateApi(ctx: any, request: Request) {
     return { error: "Invalid API Key", status: 403, start };
   }
 
-  // Record usage (fire and forget)
-  ctx.runMutation(internal.apiKeys.updateUsage, { keyId: key._id });
+  // Enforce Rate Limit (Blocking)
+  try {
+    await ctx.runMutation(internal.apiKeys.updateUsage, {
+      keyId: key._id,
+      userId: key.userId
+    });
+  } catch (e: any) {
+    if (e.message.includes("Rate limit exceeded")) {
+      return { error: "Rate limit exceeded. Please try again later.", status: 429, start };
+    }
+    // Log other errors but maybe don't block? Or block for safety?
+    console.error("Rate limit check failed", e);
+    return { error: "Internal Server Error", status: 500, start };
+  }
 
   return { key, start };
 }
@@ -160,16 +172,47 @@ async function authenticateApi(ctx: any, request: Request) {
 // Helper to log request
 async function logApi(ctx: any, result: any, request: Request, start: number) {
   const durationMs = Date.now() - start;
+  const endpoint = new URL(request.url).pathname;
+  const method = request.method;
+  const status = result.status || 200;
+
+  // 1. Log to Usage Stats (High volume, lightweight)
   await ctx.runMutation(internal.apiKeys.logRequest, {
     keyId: result.key?._id,
     userId: result.key?.userId,
-    endpoint: new URL(request.url).pathname,
-    method: request.method,
-    status: result.status || 200,
+    endpoint,
+    method,
+    status,
     ipAddress: request.headers.get("x-forwarded-for") || undefined,
     userAgent: request.headers.get("user-agent") || undefined,
     durationMs,
   });
+
+  // 2. Log to Audit Logs (User Action History)
+  // Only log if we have a user (authenticated request)
+  if (result.key?.userId) {
+    const actionMap: Record<string, string> = {
+      "GET /api/v1/domains": "api_list_domains",
+      "POST /api/v1/domains": "api_create_domain",
+    };
+
+    // Construct simplified action name e.g. "api_get_domains"
+    // Heuristic: Method + Resource
+    let action = `api_${method.toLowerCase()}`;
+    if (endpoint.includes("/dns")) action += "_dns";
+    else if (endpoint.includes("/domains")) action += "_domains";
+
+    await ctx.runMutation(internal.auditLogs.createAuditLog, {
+      userId: result.key.userId,
+      action: action,
+      details: `${method} ${endpoint} (${status})`,
+      status: status >= 400 ? "failed" : "success",
+      metadata: {
+        ipAddress: request.headers.get("x-forwarded-for") || undefined,
+        userAgent: request.headers.get("user-agent") || undefined,
+      }
+    });
+  }
 }
 
 // GET /api/v1/domains - List domains
