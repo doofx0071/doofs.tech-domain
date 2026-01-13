@@ -29,6 +29,7 @@ import type * as platformDomains from "../platformDomains.js";
 import type * as profile from "../profile.js";
 import type * as ratelimit from "../ratelimit.js";
 import type * as settings from "../settings.js";
+import type * as status from "../status.js";
 import type * as storage from "../storage.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
@@ -61,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   profile: typeof profile;
   ratelimit: typeof ratelimit;
   settings: typeof settings;
+  status: typeof status;
   storage: typeof storage;
   users: typeof users;
   validators: typeof validators;

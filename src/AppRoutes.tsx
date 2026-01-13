@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
 import Tutorials from "./pages/Tutorials";
 import NotFound from "./pages/NotFound";
+import Health from "./pages/Health";
 
 const adminRoute = import.meta.env.VITE_ADMIN_ROUTE || "/admin-122303";
 
@@ -35,6 +36,7 @@ export const AppRoutes = () => {
             <Route path="/api" element={<ApiDocs />} />
             <Route path="/tutorials" element={<Tutorials />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/health" element={<Health />} />
             <Route
                 path={`${adminRoute}/dashboard/*`}
                 element={
