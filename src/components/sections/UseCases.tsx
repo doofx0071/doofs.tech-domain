@@ -1,11 +1,14 @@
 import { Rocket, Bot, TestTube, Zap, LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface UseCase {
   icon: LucideIcon;
   title: string;
   description: string;
-  iconBg: string;
-  iconColor: string;
+  // We use specific color classes for the hover glow
+  color: string;
+  borderColor: string;
+  textColor: string;
 }
 
 const useCases: UseCase[] = [
@@ -13,79 +16,108 @@ const useCases: UseCase[] = [
     icon: Rocket,
     title: "Side projects",
     description: "Give your weekend projects a memorable home without the domain cost.",
-    iconBg: "bg-primary/10",
-    iconColor: "text-primary",
+    color: "bg-blue-500",
+    borderColor: "group-hover:border-blue-500/50",
+    textColor: "group-hover:text-blue-500",
   },
   {
     icon: Bot,
     title: "Bots & APIs",
     description: "Host Discord bots, webhooks, or microservices on a clean URL.",
-    iconBg: "bg-chart-2/10",
-    iconColor: "text-chart-2",
+    color: "bg-purple-500",
+    borderColor: "group-hover:border-purple-500/50",
+    textColor: "group-hover:text-purple-500",
   },
   {
     icon: TestTube,
     title: "Testing & demos",
     description: "Share staging environments and demos with clients or teammates.",
-    iconBg: "bg-destructive/10",
-    iconColor: "text-destructive",
+    color: "bg-green-500",
+    borderColor: "group-hover:border-green-500/50",
+    textColor: "group-hover:text-green-500",
   },
   {
     icon: Zap,
     title: "MVPs & experiments",
     description: "Launch quickly to validate ideas before investing in a custom domain.",
-    iconBg: "bg-chart-4/40",
-    iconColor: "text-foreground",
+    color: "bg-orange-500",
+    borderColor: "group-hover:border-orange-500/50",
+    textColor: "group-hover:text-orange-500",
   },
 ];
 
 export const UseCases = () => {
   return (
-    <section className="py-12 md:py-20 px-4 relative overflow-hidden">
-      {/* Gradient background */}
-      <div 
-        className="absolute inset-0 z-0"
+    <section className="py-24 px-4 relative overflow-hidden bg-background">
+      {/* Center Glow Background */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none"
         style={{
-          background: "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--secondary)) 50%, hsl(var(--background)) 100%)"
+          background: "radial-gradient(circle at center, hsl(var(--primary) / 0.15), transparent 70%)"
         }}
       />
-      
-      <div className="w-full px-4 md:px-12 lg:px-20 relative z-10">
-        {/* Header */}
-        <div className="text-center mb-8 md:mb-12">
-          <span className="text-primary font-mono text-xs sm:text-sm font-bold tracking-wider uppercase mb-2 block">
+
+      <div className="container max-w-7xl mx-auto relative z-10">
+        <div className="text-center mb-16">
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-primary font-mono text-xs sm:text-sm font-bold tracking-wider uppercase mb-3 block"
+          >
             Use Cases
-          </span>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-3 md:mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          </motion.span>
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-3xl md:text-5xl font-black mb-4 tracking-tight font-poppins"
+          >
             Built for developers
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-lg text-muted-foreground max-w-2xl mx-auto"
+          >
             Whether you're building a side project or launching an MVP, we've got you covered.
-          </p>
+          </motion.p>
         </div>
 
-        {/* Cards grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {useCases.map((useCase, index) => {
             const Icon = useCase.icon;
             return (
-              <div
+              <motion.div
                 key={useCase.title}
-                className="group bg-card border-2 border-border p-4 md:p-6 hover:border-primary/50 hover:-translate-y-1 transition-all duration-300 hover:shadow-lg"
-                style={{ animationDelay: `${index * 100}ms` }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className={`group relative p-6 h-full border bg-card/40 backdrop-blur-sm rounded-3xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 overflow-hidden ${useCase.borderColor}`}
               >
-                {/* Icon container */}
-                <div className={`w-10 h-10 md:w-12 md:h-12 ${useCase.iconBg} flex items-center justify-center mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className={`h-5 w-5 md:h-6 md:w-6 ${useCase.iconColor}`} />
+                {/* Hover Glow Background */}
+                <div className={`absolute -inset-2 opacity-0 group-hover:opacity-10 blur-2xl transition-opacity duration-500 ${useCase.color}`} />
+
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110 ${useCase.color} bg-opacity-10 text-white`}>
+                    {/* The icon itself inherits the color from the parent text on hover if we want, or keeps specific colors. 
+                         Let's keep the icon colored by the 'color' prop but lighter bg. 
+                     */}
+                    <Icon className={`h-6 w-6 ${useCase.textColor.replace('group-hover:', '')}`} />
+                  </div>
+
+                  <h3 className={`text-xl font-bold mb-3 transition-colors duration-300 ${useCase.textColor}`}>
+                    {useCase.title}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {useCase.description}
+                  </p>
                 </div>
-                
-                <h3 className="font-bold text-base md:text-lg mb-2 group-hover:text-primary transition-colors">
-                  {useCase.title}
-                </h3>
-                <p className="text-muted-foreground text-xs md:text-sm leading-relaxed">
-                  {useCase.description}
-                </p>
-              </div>
+              </motion.div>
             );
           })}
         </div>
