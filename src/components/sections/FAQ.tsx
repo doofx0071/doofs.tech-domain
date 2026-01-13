@@ -9,7 +9,7 @@ const faqs = [
   {
     question: "Is it really free?",
     answer:
-      "Yes. Doofs is completely free to use. We believe developers should be able to launch projects without worrying about domain costs. We may offer premium features in the future, but the core service will always be free.",
+      "Yes. Domains by doofs.tech is completely free to use. We believe developers should be able to launch projects without worrying about domain costs. We may offer premium features in the future, but the core service will always be free.",
   },
   {
     question: "Do I get full DNS control?",
@@ -24,7 +24,7 @@ const faqs = [
   {
     question: "Are there any limits?",
     answer:
-      "Each account can claim up to 3 subdomains during the beta period. We also have reasonable rate limits to protect the platform. Limits may change as we scale.",
+      "Each account can claim up to 5 domains during the beta period. We also have reasonable rate limits to protect the platform. Limits may change as we scale.",
   },
   {
     question: "Can my subdomain be removed?",

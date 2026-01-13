@@ -9,36 +9,36 @@ interface Feature {
 }
 
 const features: Feature[] = [
-  { 
-    text: "Free subdomains", 
+  {
+    text: "Free subdomains",
     description: "Get your own .doofs.tech subdomain at zero cost, forever.",
     icon: Globe,
-    available: true 
+    available: true
   },
-  { 
-    text: "Full DNS control", 
-    description: "Configure A, AAAA, CNAME, and TXT records as needed.",
+  {
+    text: "Full DNS control",
+    description: "Configure A, AAAA, CNAME, MX, and TXT records as needed.",
     icon: Settings,
-    available: true 
+    available: true
   },
-  { 
-    text: "API access", 
+  {
+    text: "API access",
     description: "Programmatically manage your domains via our REST API.",
     icon: Code,
-    available: false, 
-    soon: true 
+    available: false,
+    soon: true
   },
-  { 
-    text: "Instant setup", 
+  {
+    text: "Instant setup",
     description: "Go from signup to live domain in under 2 minutes.",
     icon: Zap,
-    available: true 
+    available: true
   },
-  { 
-    text: "Abuse protection", 
+  {
+    text: "Abuse protection",
     description: "Built-in security measures to keep the platform safe.",
     icon: Shield,
-    available: true 
+    available: true
   },
 ];
 
@@ -46,14 +46,14 @@ export const Features = () => {
   return (
     <section className="py-12 md:py-20 px-4 relative overflow-hidden" id="features">
       {/* Background pattern */}
-      <div 
+      <div
         className="absolute inset-0 z-0 opacity-50"
         style={{
           backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0)`,
           backgroundSize: "32px 32px",
         }}
       />
-      
+
       <div className="w-full px-4 md:px-12 lg:px-20 relative z-10">
         {/* Header */}
         <div className="text-center mb-8 md:mb-12">
@@ -75,21 +75,19 @@ export const Features = () => {
             return (
               <div
                 key={feature.text}
-                className={`group relative flex items-start gap-3 md:gap-4 p-4 md:p-5 border-2 bg-card transition-all duration-300 ${
-                  feature.available 
-                    ? "border-border hover:border-primary/50 hover:shadow-lg" 
+                className={`group relative flex items-start gap-3 md:gap-4 p-4 md:p-5 border-2 bg-card transition-all duration-300 ${feature.available
+                    ? "border-border hover:border-primary/50 hover:shadow-lg"
                     : "border-dashed border-border/50"
-                }`}
+                  }`}
               >
                 {/* Icon */}
-                <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center flex-shrink-0 ${
-                  feature.available 
-                    ? "bg-primary/10 text-primary" 
+                <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center flex-shrink-0 ${feature.available
+                    ? "bg-primary/10 text-primary"
                     : "bg-muted text-muted-foreground"
-                }`}>
+                  }`}>
                   <Icon className="h-4 w-4 md:h-5 md:w-5" />
                 </div>
-                
+
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
