@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Trash2, Plus, Globe } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 
 interface DnsRecordsProps {
@@ -54,9 +55,10 @@ export function DnsRecords({ domainId, subdomain, rootDomain, isOpen, onClose }:
     const deleteRecord = useMutation(api.dns.deleteRecord);
     const { toast } = useToast();
 
-    const [type, setType] = useState<"A" | "AAAA" | "CNAME" | "TXT">("A");
+    const [type, setType] = useState<"A" | "AAAA" | "CNAME" | "TXT" | "MX">("A");
     const [name, setName] = useState("");
     const [content, setContent] = useState("");
+    const [priority, setPriority] = useState("");
     const [isCreating, setIsCreating] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -69,6 +71,7 @@ export function DnsRecords({ domainId, subdomain, rootDomain, isOpen, onClose }:
                 type,
                 name,
                 content,
+                priority: type === "MX" ? parseInt(priority) || 10 : undefined,
                 ttl: 1, // Automatic
             });
             toast({
@@ -77,6 +80,7 @@ export function DnsRecords({ domainId, subdomain, rootDomain, isOpen, onClose }:
             });
             setName("");
             setContent("");
+            setPriority("");
         } catch (error: any) {
             toast({
                 title: "Error",
@@ -145,20 +149,31 @@ export function DnsRecords({ domainId, subdomain, rootDomain, isOpen, onClose }:
                                             <SelectItem value="A">A</SelectItem>
                                             <SelectItem value="AAAA">AAAA</SelectItem>
                                             <SelectItem value="CNAME">CNAME</SelectItem>
+                                            <SelectItem value="MX">MX</SelectItem>
                                             <SelectItem value="TXT">TXT</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="sm:col-span-3">
+                                <div className={type === "MX" ? "sm:col-span-2" : "sm:col-span-3"}>
                                     <Input
                                         placeholder="Name (@ for root)"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                     />
                                 </div>
-                                <div className="sm:col-span-5">
+                                {type === "MX" && (
+                                    <div className="sm:col-span-1">
+                                        <Input
+                                            type="number"
+                                            placeholder="Priority"
+                                            value={priority}
+                                            onChange={(e) => setPriority(e.target.value)}
+                                        />
+                                    </div>
+                                )}
+                                <div className={type === "MX" ? "sm:col-span-5" : "sm:col-span-5"}>
                                     <Input
-                                        placeholder="Content (e.g. 1.2.3.4)"
+                                        placeholder={type === "MX" ? "mail.example.com" : "Content (e.g. 1.2.3.4)"}
                                         value={content}
                                         onChange={(e) => setContent(e.target.value)}
                                     />
@@ -190,7 +205,9 @@ export function DnsRecords({ domainId, subdomain, rootDomain, isOpen, onClose }:
                                 <TableBody>
                                     {!records ? (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-4">Loading...</TableCell>
+                                            <TableCell colSpan={5} className="text-center py-8">
+                                                <LoadingSpinner size={32} />
+                                            </TableCell>
                                         </TableRow>
                                     ) : records.length === 0 ? (
                                         <TableRow>

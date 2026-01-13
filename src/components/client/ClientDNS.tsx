@@ -2,12 +2,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Globe, ShieldCheck, Loader2, MoreVertical, Edit, Copy, BookOpen } from 'lucide-react';
+import { Plus, Trash2, Globe, ShieldCheck, Loader2, MoreVertical, Edit, Copy, BookOpen, ChevronDown } from 'lucide-react';
 import { useQuery, useMutation, useAction } from "convex/react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { api } from "../../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +29,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -45,6 +50,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface GroupedRecords {
+  domainId: string;
+  subdomain: string;
+  rootDomain: string;
+  fullDomain: string;
+  records: any[];
+}
+
 export function ClientDNS() {
   const records = useQuery(api.dns.listAllMyRecords, {});
   const domains = useQuery(api.domains.listMine, {});
@@ -58,8 +71,6 @@ export function ClientDNS() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  // Edit State
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
@@ -70,6 +81,41 @@ export function ClientDNS() {
   const [content, setContent] = useState("");
   const [priority, setPriority] = useState("");
   const [ttl, setTtl] = useState("");
+
+  // Group records by domain
+  const groupedRecords = useMemo((): GroupedRecords[] => {
+    if (!domains || !records) return [];
+
+    // Create a map of all domains
+    const domainMap = new Map<string, GroupedRecords>();
+
+    // Initialize with all domains (even those without records)
+    domains.forEach((domain: any) => {
+      domainMap.set(domain._id, {
+        domainId: domain._id,
+        subdomain: domain.subdomain,
+        rootDomain: domain.rootDomain,
+        fullDomain: `${domain.subdomain}.${domain.rootDomain}`,
+        records: [],
+      });
+    });
+
+    // Add records to their respective domains
+    records.forEach((record: any) => {
+      const group = domainMap.get(record.domainId);
+      if (group) {
+        group.records.push(record);
+      }
+    });
+
+    return Array.from(domainMap.values());
+  }, [domains, records]);
+
+  // Pre-select domain when opening add dialog for specific domain
+  const openAddForDomain = (domainId: string) => {
+    setSelectedDomain(domainId);
+    setIsAddOpen(true);
+  };
 
   const handleCreate = async () => {
     if (!selectedDomain || !name || !content) return;
@@ -171,219 +217,277 @@ export function ClientDNS() {
     }
   };
 
+  // Loading state
+  if (!records || !domains) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">DNS Records</h1>
+          <p className="text-muted-foreground">Configure DNS records for your domains.</p>
+        </div>
+        <Card className="w-full">
+          <CardContent className="py-16">
+            <LoadingSpinner />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">DNS Records</h1>
-        <p className="text-muted-foreground">Configure DNS records for your domains.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">DNS Records</h1>
+          <p className="text-muted-foreground">Configure DNS records for your domains.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setIsHelpOpen(true)} data-tour="dns-guide-btn">
+            <BookOpen className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">DNS Guide</span>
+          </Button>
+          <Button size="sm" onClick={() => setIsAddOpen(true)} data-tour="add-dns-btn">
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add Record</span>
+          </Button>
+        </div>
       </div>
 
-      <Card className="w-full">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <CardTitle>DNS Records</CardTitle>
-            <CardDescription>All DNS records across your domains</CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsHelpOpen(true)} data-tour="dns-guide-btn">
-              <BookOpen className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">DNS Guide</span>
+      {/* Empty state */}
+      {groupedRecords.length === 0 && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Globe className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Domains Found</h3>
+            <p className="text-muted-foreground mb-4">
+              Claim a subdomain first to start managing DNS records.
+            </p>
+            <Button variant="outline" asChild>
+              <a href="/dashboard/domains">Go to Domains</a>
             </Button>
-            <Dialog open={isAddOpen} onOpenChange={(open) => {
-              setIsAddOpen(open);
-              if (!open) resetForm();
-            }}>
-              <DialogTrigger asChild>
-                <Button size="sm" data-tour="add-dns-btn">
-                  <Plus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Add Record</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Add DNS Record</DialogTitle>
-                  <DialogDescription>
-                    Add a new DNS record. It will be synced to Cloudflare automatically.
-                  </DialogDescription>
-                </DialogHeader>
+          </CardContent>
+        </Card>
+      )}
 
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Domain</Label>
-                    {domains ? (
-                      <Select value={selectedDomain} onValueChange={setSelectedDomain}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a domain" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {domains.map((d: any) => (
-                            <SelectItem key={d._id} value={d._id}>
-                              {d.subdomain}.{d.rootDomain}
-                            </SelectItem>
+      {/* Accordion for each domain */}
+      {groupedRecords.length > 0 && (
+        <Accordion type="multiple" defaultValue={groupedRecords.map(g => g.domainId)} className="space-y-3">
+          {groupedRecords.map((group) => (
+            <AccordionItem
+              key={group.domainId}
+              value={group.domainId}
+              className="border rounded-lg bg-card px-4 data-[state=open]:pb-4"
+            >
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex flex-1 items-center justify-between pr-4">
+                  <div className="flex items-center gap-3">
+                    <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-medium text-left break-all">{group.fullDomain}</span>
+                  </div>
+                  <Badge variant="secondary" className="shrink-0 ml-2">
+                    {group.records.length} {group.records.length === 1 ? 'record' : 'records'}
+                  </Badge>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="pt-2">
+                  {/* Records table or empty state */}
+                  {group.records.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground border rounded-md bg-muted/30">
+                      <p className="text-sm">No DNS records yet.</p>
+                      <p className="text-xs mt-1">Add a record to get started.</p>
+                    </div>
+                  ) : (
+                    <div className="border rounded-md overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[70px]">Type</TableHead>
+                            <TableHead className="min-w-[80px]">Name</TableHead>
+                            <TableHead className="min-w-[120px]">Value</TableHead>
+                            <TableHead className="w-[60px] hidden sm:table-cell">TTL</TableHead>
+                            <TableHead className="w-[60px] hidden sm:table-cell">Status</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {group.records.map((record: any) => (
+                            <TableRow key={record._id}>
+                              <TableCell>
+                                <Badge variant="outline" className="text-[10px]">{record.type}</Badge>
+                              </TableCell>
+                              <TableCell className="font-mono text-sm">{record.name}</TableCell>
+                              <TableCell className="font-mono text-xs max-w-[150px] truncate" title={record.content}>
+                                {record.content}
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell text-xs">
+                                {record.ttl === 1 || !record.ttl ? "Auto" : record.ttl}
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">
+                                <Badge
+                                  variant={record.status === "active" ? "default" : record.status === "error" ? "destructive" : "secondary"}
+                                  className="text-[10px]"
+                                >
+                                  {record.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                      <span className="sr-only">Open menu</span>
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem
+                                      className="cursor-pointer"
+                                      onClick={() => handleVerify(record)}
+                                    >
+                                      <ShieldCheck className="mr-2 h-4 w-4" />
+                                      Verify Propagation
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="cursor-pointer"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(record.content);
+                                        toast({ title: "Copied value to clipboard" });
+                                      }}>
+                                      <Copy className="mr-2 h-4 w-4" />
+                                      Copy Value
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="cursor-pointer"
+                                      onClick={() => openEdit(record)}
+                                    >
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit Record
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive focus:text-destructive cursor-pointer"
+                                      onClick={() => setDeleteId(record._id)}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="h-10 w-full bg-muted animate-pulse rounded-md" />
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="col-span-1 space-y-2">
-                      <Label>Type</Label>
-                      <Select value={type} onValueChange={(v: any) => setType(v as any)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="A">A</SelectItem>
-                          <SelectItem value="AAAA">AAAA</SelectItem>
-                          <SelectItem value="CNAME">CNAME</SelectItem>
-                          <SelectItem value="MX">MX</SelectItem>
-                          <SelectItem value="TXT">TXT</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-3 space-y-2">
-                      <Label>Name</Label>
-                      <Input
-                        placeholder="@, www, api"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                      />
-                      <p className="text-[0.8rem] text-muted-foreground">
-                        Use @ for root, or sub-label (e.g. 'api' for api.sub.domain.com)
-                      </p>
-                    </div>
-                  </div>
-
-                  {type === "MX" && (
-                    <div className="space-y-2">
-                      <Label>Priority</Label>
-                      <Input
-                        type="number"
-                        placeholder="10"
-                        value={priority}
-                        onChange={(e) => setPriority(e.target.value)}
-                      />
+                        </TableBody>
+                      </Table>
                     </div>
                   )}
-
-                  <div className="space-y-2">
-                    <Label>Content</Label>
-                    <Input
-                      placeholder={type === "A" ? "1.2.3.4" : "example.com"}
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>TTL (Optional)</Label>
-                    <Input
-                      type="number"
-                      placeholder="Auto"
-                      value={ttl}
-                      onChange={(e) => setTtl(e.target.value)}
-                    />
-                  </div>
                 </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      )}
 
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-                  <Button onClick={handleCreate} disabled={createLoading || !selectedDomain || !content}>
-                    {createLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Add Record
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+      {/* Add Record Dialog */}
+      <Dialog open={isAddOpen} onOpenChange={(open) => {
+        setIsAddOpen(open);
+        if (!open) resetForm();
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add DNS Record</DialogTitle>
+            <DialogDescription>
+              Add a new DNS record. It will be synced to Cloudflare automatically.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Domain</Label>
+              <Select value={selectedDomain} onValueChange={setSelectedDomain}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a domain" />
+                </SelectTrigger>
+                <SelectContent>
+                  {domains.map((d: any) => (
+                    <SelectItem key={d._id} value={d._id}>
+                      {d.subdomain}.{d.rootDomain}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-4 gap-4">
+              <div className="col-span-1 space-y-2">
+                <Label>Type</Label>
+                <Select value={type} onValueChange={(v: any) => setType(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A">A</SelectItem>
+                    <SelectItem value="AAAA">AAAA</SelectItem>
+                    <SelectItem value="CNAME">CNAME</SelectItem>
+                    <SelectItem value="MX">MX</SelectItem>
+                    <SelectItem value="TXT">TXT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-3 space-y-2">
+                <Label>Name</Label>
+                <Input
+                  placeholder="@, www, api"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <p className="text-[0.8rem] text-muted-foreground">
+                  Use @ for root, or sub-label (e.g. 'api')
+                </p>
+              </div>
+            </div>
+
+            {type === "MX" && (
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Input
+                  type="number"
+                  placeholder="10"
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Content</Label>
+              <Input
+                placeholder={type === "A" ? "1.2.3.4" : "example.com"}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>TTL (Optional)</Label>
+              <Input
+                type="number"
+                placeholder="Auto"
+                value={ttl}
+                onChange={(e) => setTtl(e.target.value)}
+              />
+            </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Domain</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>TTL</TableHead>
-                  <TableHead className="w-24">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {!records ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12">
-                      <LoadingSpinner />
-                    </TableCell>
-                  </TableRow>
-                ) : records.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No DNS records found.</TableCell></TableRow>
-                ) : (
-                  records.map((record: any) => (
-                    <TableRow key={record._id}>
-                      <TableCell className="font-medium">{record.subdomain}.{record.rootDomain}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{record.type}</Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{record.name}</TableCell>
-                      <TableCell className="font-mono text-sm max-w-48 truncate">{record.content}</TableCell>
-                      <TableCell>{record.ttl || "Auto"}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              className="cursor-pointer"
-                              onClick={() => handleVerify(record)}
-                            >
-                              <ShieldCheck className="mr-2 h-4 w-4" />
-                              Verify Propagation
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="cursor-pointer"
-                              onClick={() => {
-                                navigator.clipboard.writeText(record.content);
-                                toast({ title: "Copied value to clipboard" });
-                              }}>
-                              <Copy className="mr-2 h-4 w-4" />
-                              Copy Value
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="cursor-pointer"
-                              onClick={() => openEdit(record)}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Record
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive cursor-pointer"
-                              onClick={() => setDeleteId(record._id)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={createLoading || !selectedDomain || !content}>
+              {createLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add Record
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={(open) => {
@@ -497,12 +601,12 @@ export function ClientDNS() {
               <div className="bg-muted p-3 rounded-md text-sm text-foreground space-y-2">
                 <p>The <strong>Name</strong> field determines the prefix of your subdomain.</p>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Use <strong>@</strong> to refer to your main subdomain (e.g., <code>{domains?.[0]?.subdomain}.{domains?.[0]?.rootDomain}</code>).</li>
-                  <li>Use <strong>www</strong> to create <code>www.{domains?.[0]?.subdomain}.{domains?.[0]?.rootDomain}</code>.</li>
-                  <li>Use <strong>api</strong> to create <code>api.{domains?.[0]?.subdomain}.{domains?.[0]?.rootDomain}</code>.</li>
+                  <li>Use <strong>@</strong> to refer to your main subdomain.</li>
+                  <li>Use <strong>www</strong> to create www prefix.</li>
+                  <li>Use <strong>api</strong> to create api prefix.</li>
                 </ul>
                 <p className="text-red-500 font-medium text-xs mt-2">
-                  ⚠️ Common Mistake: Do NOT type your subdomain name again. Typing "{domains?.[0]?.subdomain}" will create "{domains?.[0]?.subdomain}.{domains?.[0]?.subdomain}.{domains?.[0]?.rootDomain}".
+                  ⚠️ Common Mistake: Do NOT type your subdomain name again.
                 </p>
               </div>
             </div>
@@ -542,19 +646,7 @@ export function ClientDNS() {
                       <TableCell className="font-medium">Google Workspace</TableCell>
                       <TableCell>MX</TableCell>
                       <TableCell>@</TableCell>
-                      <TableCell className="font-mono text-xs">1 aspmx.l.google.com</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Outlook 365</TableCell>
-                      <TableCell>MX</TableCell>
-                      <TableCell>@</TableCell>
-                      <TableCell className="font-mono text-xs">[token]...outlook.com</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">SPF (Email)</TableCell>
-                      <TableCell>TXT</TableCell>
-                      <TableCell>@</TableCell>
-                      <TableCell className="font-mono text-xs">v=spf1 include:_spf.google.com ~all</TableCell>
+                      <TableCell className="font-mono text-xs">aspmx.l.google.com</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -568,6 +660,7 @@ export function ClientDNS() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

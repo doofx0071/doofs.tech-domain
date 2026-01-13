@@ -1,5 +1,6 @@
 import { Routes, Route, Link } from "react-router-dom";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminOverview } from "@/components/admin/AdminOverview";
 import { AdminUsers } from "@/components/admin/AdminUsers";
@@ -41,6 +42,9 @@ const AdminDashboard = () => {
           <Link to="/docs" className="text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">
             Docs
           </Link>
+
+          <NotificationBell />
+
           <Button
             variant="ghost"
             size="icon"

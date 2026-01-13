@@ -24,6 +24,7 @@ import type * as emailService from "../emailService.js";
 import type * as emailTemplates_adminNotification from "../emailTemplates/adminNotification.js";
 import type * as http from "../http.js";
 import type * as lib from "../lib.js";
+import type * as notifications from "../notifications.js";
 import type * as platformDns from "../platformDns.js";
 import type * as platformDomains from "../platformDomains.js";
 import type * as profile from "../profile.js";
@@ -57,6 +58,7 @@ declare const fullApi: ApiFromModules<{
   "emailTemplates/adminNotification": typeof emailTemplates_adminNotification;
   http: typeof http;
   lib: typeof lib;
+  notifications: typeof notifications;
   platformDns: typeof platformDns;
   platformDomains: typeof platformDomains;
   profile: typeof profile;

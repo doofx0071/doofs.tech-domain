@@ -193,6 +193,41 @@ export const completeUpsert = internalMutation({
             lastError: undefined,
             updatedAt: now()
         });
+
+        // Notify User
+        const record = await ctx.db.get(args.recordId);
+        if (record && record.userId) {
+            const details = [
+                `Type: ${record.type}`,
+                `Name: ${record.name}`,
+                `Content: ${record.content}`,
+                record.priority ? `Priority: ${record.priority}` : null,
+                `TTL: ${record.ttl === 1 ? 'Auto' : record.ttl}`
+            ].filter(Boolean).join("\n");
+
+            // Notify the user who owns the record
+            await ctx.scheduler.runAfter(0, internal.notifications.createInternal, {
+                userId: record.userId,
+                type: "success",
+                title: "DNS Record Active",
+                message: `The DNS record ${record.name} is now active.\n\n${details}`,
+                link: `/dashboard/dns`,
+                domainId: record.domainId,
+                rootDomain: record.rootDomain,
+                adminDetails: `Provider ID: ${args.providerRecordId}\n\nRaw Record:\n${JSON.stringify(record, null, 2)}`
+            });
+
+            // Also notify all admins
+            await ctx.scheduler.runAfter(0, internal.notifications.notifyAdmins, {
+                type: "success",
+                title: "DNS Record Active",
+                message: `User created DNS record ${record.fqdn}.\n\n${details}`,
+                link: `/admin-122303/dashboard/domains`,
+                domainId: record.domainId,
+                rootDomain: record.rootDomain,
+                adminDetails: `Provider ID: ${args.providerRecordId}\n\nRaw Record:\n${JSON.stringify(record, null, 2)}`
+            });
+        }
     }
 });
 
@@ -202,6 +237,34 @@ export const completeDelete = internalMutation({
         await ctx.db.patch(args.jobId, { status: "success", updatedAt: now() });
         const record = await ctx.db.get(args.recordId);
         if (record) {
+            // Notify User before deletion
+            // Notify User before deletion
+            if (record.userId) {
+                const details = [
+                    `Type: ${record.type}`,
+                    `Content: ${record.content}`
+                ].filter(Boolean).join("\n");
+
+                await ctx.scheduler.runAfter(0, internal.notifications.createInternal, {
+                    userId: record.userId,
+                    type: "info",
+                    title: "DNS Record Deleted",
+                    message: `The DNS record ${record.name} has been deleted.\n\n${details}`,
+                    link: `/dashboard/dns`,
+                    domainId: record.domainId,
+                    rootDomain: record.rootDomain
+                });
+
+                // Also notify all admins
+                await ctx.scheduler.runAfter(0, internal.notifications.notifyAdmins, {
+                    type: "info",
+                    title: "DNS Record Deleted",
+                    message: `User deleted DNS record ${record.fqdn}.\n\n${details}`,
+                    link: `/admin-122303/dashboard/domains`,
+                    domainId: record.domainId,
+                    rootDomain: record.rootDomain
+                });
+            }
             await ctx.db.delete(args.recordId); // Actually delete it now
         }
     }
@@ -215,6 +278,37 @@ export const completeJob = internalMutation({
         const job = await ctx.db.get(args.jobId);
         if (job?.recordId && args.status === "failed") {
             await ctx.db.patch(job.recordId, { status: "error", lastError: args.error });
+
+            // Notify User of Failure
+            const record = await ctx.db.get(job.recordId);
+            if (record && record.userId) {
+                const details = [
+                    `Type: ${record.type}`,
+                    `Content: ${record.content}`
+                ].filter(Boolean).join("\n");
+
+                await ctx.scheduler.runAfter(0, internal.notifications.createInternal, {
+                    userId: record.userId,
+                    type: "error",
+                    title: "DNS Update Failed",
+                    message: `Failed to update DNS record ${record.name}.\n\n${details}`,
+                    link: `/dashboard/dns`,
+                    domainId: record.domainId,
+                    rootDomain: record.rootDomain,
+                    adminDetails: JSON.stringify({ error: args.error, jobId: args.jobId, record })
+                });
+
+                // Also notify all admins
+                await ctx.scheduler.runAfter(0, internal.notifications.notifyAdmins, {
+                    type: "error",
+                    title: "DNS Update Failed",
+                    message: `Failed to update DNS record ${record.fqdn}.\n\n${details}`,
+                    link: `/admin-122303/dashboard/domains`,
+                    domainId: record.domainId,
+                    rootDomain: record.rootDomain,
+                    adminDetails: JSON.stringify({ error: args.error, jobId: args.jobId, record })
+                });
+            }
         }
     }
 });

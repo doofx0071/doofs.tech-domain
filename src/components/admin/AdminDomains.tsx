@@ -37,8 +37,11 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PlatformDnsRecords } from "./PlatformDnsRecords";
+import { useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
 
 export function AdminDomains() {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [search, setSearch] = useState("");
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [newDomain, setNewDomain] = useState("");
@@ -68,6 +71,37 @@ export function AdminDomains() {
     const deleteDomain = useMutation(api.platformDomains.remove);
     const updateDomain = useMutation(api.platformDomains.update);
     const { toast } = useToast();
+
+    // Auto-open DNS sheet from query param (deep-link from notifications)
+    useEffect(() => {
+        // Support both openDns (by ID) and openRoot (by rootDomain) params
+        const openDnsId = searchParams.get("openDns");
+        const openRoot = searchParams.get("openRoot");
+
+        if (domains) {
+            let domain = null;
+
+            // Try to find by ID first
+            if (openDnsId) {
+                domain = domains.find(d => d._id === openDnsId);
+            }
+
+            // If not found by ID, try by rootDomain (platform domain name)
+            if (!domain && openRoot) {
+                domain = domains.find(d => d.domain === openRoot);
+            }
+
+            if (domain) {
+                setDnsDomainId(domain._id);
+                setDnsDomainName(domain.domain);
+                setDnsOpen(true);
+                // Clear the query params after opening
+                searchParams.delete("openDns");
+                searchParams.delete("openRoot");
+                setSearchParams(searchParams, { replace: true });
+            }
+        }
+    }, [searchParams, domains, setSearchParams]);
 
     const handleCreate = async () => {
         if (!newDomain) return;

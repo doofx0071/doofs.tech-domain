@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Trash2, Plus, Pencil, Globe, RefreshCw } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 
 interface PlatformDnsRecordsProps {
@@ -61,7 +62,7 @@ export function PlatformDnsRecords({ platformDomainId, domain, isOpen, onClose }
     const listRecords = useAction(api.platformDns.listRecords);
     const createRecord = useMutation(api.platformDns.createRecord);
     const updateRecord = useMutation(api.platformDns.updateRecord);
-    const deleteRecord = useMutation(api.platformDns.deleteRecord);
+    const deleteRecordAction = useAction(api.platformDns.deleteRecordByProviderId);
     const { toast } = useToast();
 
     // Records state
@@ -173,9 +174,14 @@ export function PlatformDnsRecords({ platformDomainId, domain, isOpen, onClose }
     const confirmDelete = async () => {
         if (!deleteId) return;
         try {
-            await deleteRecord({ recordId: deleteId as any });
-            toast({ title: "Record deleted", description: "Deletion has been queued." });
+            await deleteRecordAction({
+                platformDomainId,
+                providerRecordId: deleteId
+            });
+            toast({ title: "Record deleted", description: "Deletion completed." });
             setDeleteId(null);
+            // Refresh records list
+            fetchRecords();
         } catch (error: any) {
             toast({ title: "Error", description: error.message, variant: "destructive" });
         }
@@ -300,8 +306,8 @@ export function PlatformDnsRecords({ platformDomainId, domain, isOpen, onClose }
                                 <TableBody>
                                     {isLoading ? (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-4">
-                                                <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                                            <TableCell colSpan={5} className="text-center py-8">
+                                                <LoadingSpinner size={32} />
                                             </TableCell>
                                         </TableRow>
                                     ) : !records || records.length === 0 ? (

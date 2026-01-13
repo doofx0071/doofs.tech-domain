@@ -229,6 +229,26 @@ const schema = defineSchema({
     updatedBy: v.id("users"),
   }),
 
+  // Notifications System
+  notifications: defineTable({
+    userId: v.id("users"),
+    type: v.union(v.literal("info"), v.literal("success"), v.literal("warning"), v.literal("error")),
+    title: v.string(), // Public safe title
+    message: v.string(), // Public safe message
+    link: v.optional(v.string()), // Actionable link
+    domainId: v.optional(v.id("domains")), // For deep-linking to specific domain
+    rootDomain: v.optional(v.string()), // For admin deep-linking to platform domain
+
+    // Admin only details (raw error logs, JSON data, etc)
+    adminDetails: v.optional(v.string()),
+
+    read: v.boolean(),
+    timestamp: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_read", ["userId", "read"])
+    .index("by_timestamp", ["timestamp"]),
+
   // API Keys for Developer Access
   api_keys: defineTable({
     userId: v.id("users"),

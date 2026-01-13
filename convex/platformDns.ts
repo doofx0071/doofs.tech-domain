@@ -4,7 +4,7 @@
  */
 
 import { v } from "convex/values";
-import { action, mutation, internalQuery } from "./_generated/server";
+import { action, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireAdmin, now } from "./lib";
 
@@ -148,7 +148,7 @@ export const updateRecord = mutation({
     },
 });
 
-// Delete DNS record
+// Delete DNS record (by Convex ID)
 export const deleteRecord = mutation({
     args: { recordId: v.id("dns_records") },
     handler: async (ctx, args) => {
@@ -181,5 +181,49 @@ export const deleteRecord = mutation({
             timestamp: now(),
             status: "success",
         });
+    },
+});
+
+// Internal mutation to delete Convex record by providerRecordId
+export const deleteConvexRecordByProviderId = internalMutation({
+    args: { providerRecordId: v.string() },
+    handler: async (ctx, args) => {
+        // Find the record by providerRecordId
+        const record = await ctx.db
+            .query("dns_records")
+            .filter((q) => q.eq(q.field("providerRecordId"), args.providerRecordId))
+            .first();
+
+        if (record) {
+            await ctx.db.delete(record._id);
+        }
+    },
+});
+
+// Delete DNS record directly from Cloudflare (by Cloudflare provider ID)
+// Used by PlatformDnsRecords which shows Cloudflare data directly
+export const deleteRecordByProviderId = action({
+    args: {
+        platformDomainId: v.id("platform_domains"),
+        providerRecordId: v.string()
+    },
+    handler: async (ctx, args) => {
+        // Verify admin (via internal query or just trust action context)
+        const platformDomain = await ctx.runQuery(internal.platformDns.getPlatformDomainInternal, { id: args.platformDomainId });
+        if (!platformDomain) throw new Error("Platform domain not found");
+        if (!platformDomain.zoneId) throw new Error("Platform domain has no Cloudflare zone");
+
+        // Delete directly from Cloudflare
+        await ctx.runAction((internal as any).dnsProvider.cloudflare.deleteRecord, {
+            zoneId: platformDomain.zoneId,
+            providerRecordId: args.providerRecordId
+        });
+
+        // Also delete the record from Convex database (if it exists)
+        await ctx.runMutation(internal.platformDns.deleteConvexRecordByProviderId, {
+            providerRecordId: args.providerRecordId
+        });
+
+        return { success: true };
     },
 });

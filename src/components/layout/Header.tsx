@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export const Header = () => {
   const { theme, toggleTheme } = useTheme();
@@ -86,6 +87,12 @@ export const Header = () => {
           <Link to="/tutorials" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">
             Tutorials
           </Link>
+
+          {/* Notifications - Only show if authenticated */}
+          {isAuthenticated && (
+            <NotificationBell />
+          )}
+
           <Button
             variant="ghost"
             size="icon"
