@@ -5,6 +5,7 @@ import { ArrowRight, Check, Loader2, X, TriangleAlert } from "lucide-react";
 import { useConvex, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -100,7 +101,11 @@ export const Hero = () => {
       <div className="w-full px-2 sm:px-4 md:px-12 lg:px-20 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           {/* Left side - Text */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          >
             <span className="text-destructive font-mono text-xs sm:text-sm font-bold tracking-wider uppercase mb-3 md:mb-4 block">
               Free domains for developers
             </span>
@@ -115,10 +120,15 @@ export const Hero = () => {
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
               100% Free forever. No hidden fees, no strings attached.
             </p>
-          </div>
+          </motion.div>
 
           {/* Right side - Check availability card */}
-          <div className="bg-background text-foreground p-4 sm:p-5 md:p-6 border-2 border-border shadow-xl">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+            className="bg-background text-foreground p-4 sm:p-5 md:p-6 border-2 border-border shadow-xl"
+          >
             <h2 className="font-bold text-xs sm:text-sm uppercase tracking-wider mb-3 md:mb-4">
               Check Availability
             </h2>
@@ -205,8 +215,8 @@ export const Hero = () => {
                       setStatus("idle");
                     }}
                     className={`text-xs px-2.5 py-1 rounded-full border transition-all ${selectedDomain === d.domain
-                        ? "bg-primary/10 border-primary text-primary font-medium ring-1 ring-primary/20"
-                        : "bg-background border-border text-muted-foreground hover:border-foreground/50 hover:text-foreground"
+                      ? "bg-primary/10 border-primary text-primary font-medium ring-1 ring-primary/20"
+                      : "bg-background border-border text-muted-foreground hover:border-foreground/50 hover:text-foreground"
                       }`}
                   >
                     .{d.domain}
@@ -218,7 +228,7 @@ export const Hero = () => {
             <p className="text-center text-xs sm:text-sm text-muted-foreground mt-3 md:mt-4">
               ❤️ <span className="hidden xs:inline">Help us keep this free — </span><a href="#signup" className="text-destructive hover:underline">Support us</a>
             </p>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

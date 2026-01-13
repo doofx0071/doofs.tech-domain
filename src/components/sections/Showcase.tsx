@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Globe, Code, Rocket, Zap, Lightbulb, type LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface ShowcaseCard {
   subdomain: string;
@@ -69,29 +70,50 @@ export const Showcase = () => {
 
       <div className="w-full px-4 md:px-12 lg:px-20 relative z-10">
         <div className="text-center mb-8 md:mb-12">
-          <span className="text-destructive font-mono text-xs sm:text-sm font-bold tracking-wider uppercase mb-2 md:mb-4 block">
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-destructive font-mono text-xs sm:text-sm font-bold tracking-wider uppercase mb-2 md:mb-4 block"
+          >
             Join the community
-          </span>
-          <h2
+          </motion.span>
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
             className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-3 md:mb-4"
             style={{ fontFamily: "'Poppins', sans-serif" }}
           >
             Built for <span className="text-accent">everyone</span>
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed"
+          >
             From personal portfolios to API endpoints, developers worldwide use
             doofs.tech for their projects.
-          </p>
+          </motion.p>
         </div>
 
         {/* Card Stack */}
-        <div className="flex justify-center items-center min-h-[250px] sm:min-h-[280px] md:min-h-[300px] relative">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+          className="flex justify-center items-center min-h-[250px] sm:min-h-[280px] md:min-h-[300px] relative"
+        >
           <div className="relative w-full max-w-[280px] sm:max-w-xs md:max-w-sm h-[180px] sm:h-[190px] md:h-[200px]">
             {showcaseCards.map((card, index) => {
               const offset = (index - activeIndex + showcaseCards.length) % showcaseCards.length;
               const isActive = offset === 0;
               const zIndex = showcaseCards.length - offset;
-              
+
               // Calculate positions for stacking effect
               const translateX = offset * 20;
               const translateY = offset * 10;
@@ -110,9 +132,8 @@ export const Showcase = () => {
                   onClick={() => setActiveIndex(index)}
                 >
                   <div
-                    className={`h-full border-2 border-border bg-card p-6 shadow-md flex flex-col justify-between ${
-                      isActive ? "shadow-xl" : ""
-                    }`}
+                    className={`h-full border-2 border-border bg-card p-6 shadow-md flex flex-col justify-between ${isActive ? "shadow-xl" : ""
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -138,7 +159,7 @@ export const Showcase = () => {
               );
             })}
           </div>
-        </div>
+        </motion.div>
 
         {/* Dots indicator */}
         <div className="flex justify-center gap-2 mt-8">
@@ -146,11 +167,10 @@ export const Showcase = () => {
             <button
               key={index}
               onClick={() => setActiveIndex(index)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === activeIndex
+              className={`w-2 h-2 rounded-full transition-all ${index === activeIndex
                   ? "bg-primary w-6"
                   : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-              }`}
+                }`}
               aria-label={`Go to card ${index + 1}`}
             />
           ))}
@@ -158,39 +178,30 @@ export const Showcase = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mt-16 max-w-2xl mx-auto">
-          <div className="text-center p-4 border-2 border-border bg-card">
-            <p
-              className="text-2xl md:text-3xl font-black text-primary"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+          {[
+            { value: "24/7", label: "Always Online", color: "text-primary", icon: "🇵🇭" },
+            { value: "100%", label: "Free Forever", color: "text-accent", icon: "🇵🇭" },
+            { value: "🇵🇭", label: "Pinoy Made", color: "text-destructive", icon: "🇵🇭" },
+          ].map((stat, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 + (i * 0.1) }}
+              className="text-center p-4 border-2 border-border bg-card"
             >
-              24/7
-            </p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
-              Always Online
-            </p>
-          </div>
-          <div className="text-center p-4 border-2 border-border bg-card">
-            <p
-              className="text-2xl md:text-3xl font-black text-accent"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
-            >
-              100%
-            </p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
-              Free Forever
-            </p>
-          </div>
-          <div className="text-center p-4 border-2 border-border bg-card">
-            <p
-              className="text-2xl md:text-3xl font-black text-destructive"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
-            >
-              🇵🇭
-            </p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
-              Pinoy Made
-            </p>
-          </div>
+              <p
+                className={`text-2xl md:text-3xl font-black ${stat.color}`}
+                style={{ fontFamily: "'Poppins', sans-serif" }}
+              >
+                {stat.value}
+              </p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
+                {stat.label}
+              </p>
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>

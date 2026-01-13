@@ -106,9 +106,22 @@ export const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-white relative text-gray-800 flex flex-col overflow-hidden">
+      {/* White Sphere Grid Background */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background: "white",
+          backgroundImage: `
+            linear-gradient(to right, rgba(71, 85, 105, 0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(71, 85, 105, 0.1) 1px, transparent 1px),
+            radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 40%, transparent 80%)
+          `,
+          backgroundSize: "32px 32px, 32px 32px, 100% 100%",
+        }}
+      />
       {/* Main content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-8 md:py-12">
+      <div className="flex-1 flex items-center justify-center px-4 py-8 md:py-12 relative z-10">
         <div className="w-full max-w-md">
           <div className="text-center mb-6 md:mb-8">
             <Link to="/" className="flex items-center justify-center gap-2 mb-3 md:mb-4">

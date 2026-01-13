@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+
 export const Terminal = () => {
   const commands = ["curl https://api.doofs.tech", "curl https://bot.doofs.tech", "curl https://demo.doofs.tech"];
   const [displayedLines, setDisplayedLines] = useState<string[]>([]);
@@ -41,20 +43,27 @@ export const Terminal = () => {
     }
   }, [currentText, currentLineIndex]);
   const marqueeItems = ["FREE FOREVER", "EASY TO USE", "NO CREDIT CARD", "INSTANT SETUP", "100% FREE", "FULL CONTROL DNS", "NO BILLING DETAILS", "MADE IN PH", "DEVELOPER FRIENDLY"];
-  return <section className="pt-3 md:pt-4 pb-8 md:pb-12 px-4 overflow-hidden relative">
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="pt-3 md:pt-4 pb-8 md:pb-12 px-4 overflow-hidden relative"
+    >
       {/* Radial Gradient Background */}
       <div className="absolute inset-0 z-0" style={{
-      background: "radial-gradient(125% 125% at 50% 10%, hsl(var(--background)) 40%, hsl(var(--primary)) 100%)"
-    }} />
+        background: "radial-gradient(125% 125% at 50% 10%, hsl(var(--background)) 40%, hsl(var(--primary)) 100%)"
+      }} />
 
       {/* Marquee */}
       <div className="relative z-10 mb-6 md:mb-8 border-y-2 border-border bg-accent overflow-hidden py-4 sm:py-5 md:py-[25px]">
         <div className="flex animate-marquee whitespace-nowrap">
           {[...marqueeItems, ...marqueeItems].map((item, index) => <span key={index} className="mx-4 sm:mx-6 md:mx-8 text-xs sm:text-sm md:text-base font-black uppercase text-accent-foreground" style={{
-          fontFamily: "'Poppins', sans-serif"
-        }}>
-              {item}
-            </span>)}
+            fontFamily: "'Poppins', sans-serif"
+          }}>
+            {item}
+          </span>)}
         </div>
       </div>
 
@@ -70,28 +79,29 @@ export const Terminal = () => {
           <div className="p-3 sm:p-4 font-mono text-[10px] sm:text-xs space-y-1 min-h-[100px] sm:min-h-[120px]">
             {/* Already typed lines */}
             {displayedLines.map((line, index) => <div key={index} className="flex items-center gap-2">
-                <span className="text-muted-foreground select-none">$</span>
-                <span className="text-foreground">
-                  curl https://<span className="text-chart-2">{line.split("://")[1].split(".")[0]}</span>.doofs.tech
-                </span>
-              </div>)}
-            
+              <span className="text-muted-foreground select-none">$</span>
+              <span className="text-foreground">
+                curl https://<span className="text-chart-2">{line.split("://")[1].split(".")[0]}</span>.doofs.tech
+              </span>
+            </div>)}
+
             {/* Currently typing line */}
             {currentLineIndex < commands.length && <div className="flex items-center gap-2">
-                <span className="text-muted-foreground select-none">$</span>
-                <span className="text-foreground">
-                  {currentText}
-                  <span className="inline-block w-2 h-4 bg-foreground animate-pulse ml-0.5" />
-                </span>
-              </div>}
+              <span className="text-muted-foreground select-none">$</span>
+              <span className="text-foreground">
+                {currentText}
+                <span className="inline-block w-2 h-4 bg-foreground animate-pulse ml-0.5" />
+              </span>
+            </div>}
 
             {/* Response */}
             {showResponse && <div className="flex items-center gap-2 mt-2 animate-fade-in">
-                <span className="text-muted-foreground select-none">→</span>
-                <span className="text-chart-2 font-bold">200 OK</span>
-              </div>}
+              <span className="text-muted-foreground select-none">→</span>
+              <span className="text-chart-2 font-bold">200 OK</span>
+            </div>}
           </div>
         </div>
       </div>
-    </section>;
+    </motion.section>
+  );
 };

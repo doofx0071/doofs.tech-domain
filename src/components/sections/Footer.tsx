@@ -3,18 +3,24 @@ import { Link } from "react-router-dom";
 import { useTheme } from "@/hooks/use-theme";
 import logoLight from "@/assets/doofs-logo-light.svg";
 import logoDark from "@/assets/doofs-logo-dark.svg";
+import { motion } from "framer-motion";
 
 export const Footer = () => {
   const { theme } = useTheme();
 
   return (
     <footer className="py-8 px-4 border-t-2 border-border">
-      <div className="w-full px-4 md:px-12 lg:px-20 flex flex-col md:flex-row items-center justify-between gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="w-full px-4 md:px-12 lg:px-20 flex flex-col md:flex-row items-center justify-between gap-4"
+      >
         <a href="/" className="flex items-center gap-2 font-mono text-sm">
-          <img 
+          <img
             key={theme}
-            src={theme === "dark" ? logoDark : logoLight} 
-            alt="doofs.tech logo" 
+            src={theme === "dark" ? logoDark : logoLight}
+            alt="doofs.tech logo"
             className="h-6 w-auto"
           />
           <span className="font-bold">doofs<span className="text-muted-foreground">.tech</span></span>
@@ -62,7 +68,7 @@ export const Footer = () => {
             Privacy
           </Link>
         </nav>
-      </div>
+      </motion.div>
     </footer>
   );
 };
