@@ -13,6 +13,26 @@ export async function requireActivePlatformDomain(ctx: any, rootDomain: string) 
 export async function requireUserId(ctx: any) {
     const userId = await auth.getUserId(ctx);
     if (!userId) throw new Error("User must be authenticated");
+
+    // Fetch user to check status and session
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error("User not found");
+
+    // 1. Suspended/Banned Check
+    if (user.status === "suspended" || user.status === "banned") {
+        throw new Error("Your account has been suspended. Please contact support.");
+    }
+
+    // 2. Session Timeout Check
+    const settings = await getSettingsOrDefaults(ctx);
+    if (user.lastLoginAt) {
+        const timeoutMs = (settings.sessionTimeoutMinutes || 60) * 60 * 1000;
+        // Check if session has expired (current time > last login + timeout)
+        if (Date.now() > user.lastLoginAt + timeoutMs) {
+            throw new Error("Session expired. Please log in again.");
+        }
+    }
+
     return userId;
 }
 
