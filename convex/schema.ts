@@ -183,7 +183,7 @@ const schema = defineSchema({
 
   // Rate Limits (Optional but recommended)
   rate_limits: defineTable({
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")), // Optional: Contact form uses email as key (no userId)
     key: v.string(),
     windowStart: v.number(),
     count: v.number(),
