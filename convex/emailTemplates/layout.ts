@@ -32,14 +32,31 @@ export const EmailLayout = (title: string, content: string, cta?: { label: strin
         border-bottom: 2px solid #000000;
         padding-bottom: 20px;
         margin-bottom: 30px;
+        text-align: center;
+    }
+    .logo-container {
+        margin-bottom: 10px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        justify-content: center;
+        gap: 10px;
     }
     .logo-img {
-        height: 24px;
+        height: 32px;
         vertical-align: middle;
-        margin-right: 10px;
+    }
+    .brand-name {
+        font-size: 24px;
+        font-weight: bold;
+        vertical-align: middle;
+    }
+    .email-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-top: 10px;
+        color: #333;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     .content {
         min-height: 150px;
@@ -75,11 +92,11 @@ export const EmailLayout = (title: string, content: string, cta?: { label: strin
 <body>
     <div class="container">
         <div class="header">
-            <div>
+            <div class="logo-container">
                 <img src="${logoUrl}" alt="Doofs Logo" class="logo-img">
-                <span style="vertical-align: middle; font-weight: bold;">doofs.tech</span>
+                <span class="brand-name">doofs.tech</span>
             </div>
-            <div style="font-weight: bold;">${title}</div>
+            <div class="email-title">${title}</div>
         </div>
 
         <div class="content">
