@@ -2,7 +2,7 @@
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "https://affable-peacock-770.convex.site/api/$1"
+            "destination": "https://d-http.doofs.tech/api/$1"
         },
         {
             "source": "/(.*)",
