@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { requireAdmin } from "./lib";
 import { auth } from "./auth";
 import { checkContactFormRateLimit } from "./ratelimit";
@@ -26,6 +27,13 @@ export const submit = mutation({
             userId: userId || undefined,
             status: "unread",
             createdAt: Date.now(),
+        });
+
+        // Send receipt email to user
+        await ctx.scheduler.runAfter(0, internal.emailService.sendContactReceiptEmail, {
+            email: args.email,
+            name: args.name,
+            message: args.message,
         });
     },
 });

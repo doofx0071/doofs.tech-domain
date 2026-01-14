@@ -30,6 +30,17 @@ export const completeOnboarding = mutation({
     }
     await ctx.db.patch(userId, { hasCompletedOnboarding: true });
 
+    // Get user details for email
+    const user = await ctx.db.get(userId);
+
+    // Notify User (Welcome Email)
+    if (user?.email) {
+      await ctx.scheduler.runAfter(0, internal.emailService.sendWelcomeEmail, {
+        email: user.email,
+        name: user.name,
+      });
+    }
+
     // Notify Admin of new user
     // We utilize the scheduler to trigger the email action asynchronously
     await ctx.scheduler.runAfter(0, internal.emailService.notifyAdmin, {

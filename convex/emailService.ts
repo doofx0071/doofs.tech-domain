@@ -2,6 +2,9 @@ import { internalAction, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { AdminNotificationTemplate } from "./emailTemplates/adminNotification";
+import { WelcomeEmailTemplate } from "./emailTemplates/welcome";
+import { DomainClaimedTemplate } from "./emailTemplates/domainClaimed";
+import { ContactReceiptTemplate } from "./emailTemplates/contactReceipt";
 
 /**
  * Send an email using Mailgun
@@ -100,4 +103,69 @@ export const notifyAdmin = internalAction({
             html,
         });
     },
+});
+
+/**
+ * Send Welcome Email to new user
+ */
+export const sendWelcomeEmail = internalAction({
+    args: {
+        email: v.string(),
+        name: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        if (!args.email) return;
+        
+        const html = WelcomeEmailTemplate(args.name || "");
+        
+        await ctx.runAction(internal.emailService.sendEmail, {
+            to: args.email,
+            subject: "Welcome to doofs.tech",
+            html,
+        });
+    }
+});
+
+/**
+ * Send Domain Claimed Confirmation
+ */
+export const sendDomainClaimedEmail = internalAction({
+    args: {
+        email: v.string(),
+        subdomain: v.string(),
+        rootDomain: v.string(),
+    },
+    handler: async (ctx, args) => {
+        if (!args.email) return;
+
+        const html = DomainClaimedTemplate(args.subdomain, args.rootDomain);
+
+        await ctx.runAction(internal.emailService.sendEmail, {
+            to: args.email,
+            subject: `You claimed ${args.subdomain}.${args.rootDomain}`,
+            html,
+        });
+    }
+});
+
+/**
+ * Send Contact Form Receipt
+ */
+export const sendContactReceiptEmail = internalAction({
+    args: {
+        email: v.string(),
+        name: v.string(),
+        message: v.string(),
+    },
+    handler: async (ctx, args) => {
+        if (!args.email) return;
+
+        const html = ContactReceiptTemplate(args.name, args.message);
+
+        await ctx.runAction(internal.emailService.sendEmail, {
+            to: args.email,
+            subject: "We received your message - doofs.tech",
+            html,
+        });
+    }
 });

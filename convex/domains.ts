@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, action, internalMutation } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { internal, api } from "./_generated/api";
 import { auth } from "./auth";
 import { requireUserId, applySearch, now, verifyTurnstile, requireActivePlatformDomain, checkDomainLimit, getSettingsOrDefaults } from "./lib";
 import { validateSubdomainLabel } from "./validators";
@@ -81,6 +81,16 @@ export const claim = action({
             subject: "New Domain Claimed",
             message: `User ${userId} has claimed the domain: ${args.subdomain}.${args.rootDomain ?? "doofs.tech"}`
         });
+
+        // Notify User
+        const user = await ctx.runQuery(api.users.currentUser);
+        if (user && user.email) {
+            await ctx.runAction(internal.emailService.sendDomainClaimedEmail, {
+                email: user.email,
+                subdomain: args.subdomain,
+                rootDomain: args.rootDomain ?? "doofs.tech",
+            });
+        }
 
         return result;
     },
