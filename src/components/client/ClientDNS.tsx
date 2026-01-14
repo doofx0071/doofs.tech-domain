@@ -149,6 +149,37 @@ export function ClientDNS() {
     }
   });
 
+  const handleNameBlur = () => {
+    // If the user pastes the full domain, strip it for them in the UI so they see what happened
+    if (!selectedDomain || !name) return;
+    
+    // Find the current domain object
+    const domain = domains?.find((d: any) => d._id === selectedDomain);
+    if (!domain) return;
+
+    const suffix = `.${domain.subdomain}.${domain.rootDomain}`.toLowerCase();
+    const fullExact = `${domain.subdomain}.${domain.rootDomain}`.toLowerCase();
+    
+    const n = name.trim().toLowerCase();
+
+    if (n.endsWith(suffix)) {
+      const relative = n.slice(0, -suffix.length);
+      setName(relative || "@");
+      toast({ 
+        title: "Auto-formatted Name", 
+        description: "We stripped the domain suffix for you. Use relative names only.",
+        variant: "info"
+      });
+    } else if (n === fullExact) {
+      setName("@");
+      toast({ 
+        title: "Auto-formatted Name", 
+        description: "Replaced full domain with @ (root).",
+        variant: "info"
+      });
+    }
+  };
+
   const handleCreate = async () => {
     if (!selectedDomain || !name || !content) return;
     
@@ -449,11 +480,13 @@ export function ClientDNS() {
                   placeholder="@, www, api"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onBlur={handleNameBlur}
                 />
                 <p className="text-[0.8rem] text-muted-foreground">
-                  Use @ for root, or sub-label (e.g. 'api')
+                  Use @ for root, or sub-label (e.g. 'api'). <strong>Do not</strong> paste the full domain.
                 </p>
               </div>
+
             </div>
 
             {type === "MX" && (
@@ -542,11 +575,13 @@ export function ClientDNS() {
                   placeholder="@, www, api"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onBlur={handleNameBlur}
                 />
                 <p className="text-[0.8rem] text-muted-foreground">
-                  Use @ for root, or sub-label (e.g. 'api')
+                  Use @ for root, or sub-label (e.g. 'api'). <strong>Do not</strong> paste the full domain.
                 </p>
               </div>
+
             </div>
 
             {type === "MX" && (
