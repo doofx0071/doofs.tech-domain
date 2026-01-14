@@ -48,6 +48,11 @@ export const updateProfile = mutation({
       throw new Error("User must be authenticated");
     }
 
+    // Validate name length (max 100 characters)
+    if (args.name !== undefined && args.name.length > 100) {
+      throw new Error("Name must be 100 characters or less");
+    }
+
     const user = await ctx.db.get(userId);
     const oldName = user?.name;
 

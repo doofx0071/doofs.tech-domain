@@ -7,6 +7,39 @@ import { hashKey } from "./apiKeys";
 
 const http = httpRouter();
 
+/**
+ * Sanitize error messages for API responses
+ * Only returns known-safe error messages, otherwise returns a generic message
+ * This prevents leaking internal implementation details to API consumers
+ */
+function getSafeErrorMessage(error: any): string {
+  const message = error?.message || "";
+  
+  // Whitelist of safe error patterns that can be shown to API consumers
+  const safePatterns = [
+    /^missing\s+\w+$/i,                     // "Missing subdomain"
+    /^invalid\s+[\w\s]+$/i,                 // "Invalid Domain ID format"
+    /not found$/i,                          // "Domain not found", "Record not found"
+    /^unauthorized$/i,                      // "Unauthorized"
+    /^authentication required$/i,           // "Authentication required"
+    /^rate limit exceeded/i,                // "Rate limit exceeded..."
+    /already.*claimed/i,                    // "Subdomain already claimed"
+    /^you (don't have|cannot|have reached)/i, // Permission/limit errors
+    /^admin access required$/i,             // "Admin access required"
+    /^user must be authenticated$/i,        // "User must be authenticated"
+  ];
+  
+  for (const pattern of safePatterns) {
+    if (pattern.test(message)) {
+      return message;
+    }
+  }
+  
+  // Log the actual error for debugging but return generic message
+  console.error("API Error (sanitized):", message);
+  return "An error occurred. Please try again.";
+}
+
 auth.addHttpRoutes(http);
 
 // Mailgun Webhook Handler
@@ -282,7 +315,7 @@ http.route({
 
     } catch (e: any) {
       const status = 400;
-      const response = new Response(JSON.stringify({ error: e.message }), { status, headers: { "Content-Type": "application/json" } });
+      const response = new Response(JSON.stringify({ error: getSafeErrorMessage(e) }), { status, headers: { "Content-Type": "application/json" } });
       await logApi(ctx, { key, status }, request, start);
       return response;
     }
@@ -386,7 +419,7 @@ http.route({
       await logApi(ctx, { key, status: 200 }, request, start);
       return resp;
     } catch (e: any) {
-      const resp = new Response(JSON.stringify({ error: e.message }), { status: 400, headers: { "Content-Type": "application/json" } });
+      const resp = new Response(JSON.stringify({ error: getSafeErrorMessage(e) }), { status: 400, headers: { "Content-Type": "application/json" } });
       await logApi(ctx, { key, status: 400 }, request, start);
       return resp;
     }
@@ -463,7 +496,7 @@ async function handleDnsRoutes(ctx: any, request: Request, key: any, domainId: a
       await logApi(ctx, { key, status: 201 }, request, start);
       return resp;
     } catch (e: any) {
-      const resp = new Response(JSON.stringify({ error: e.message }), { status: 400, headers: { "Content-Type": "application/json" } });
+      const resp = new Response(JSON.stringify({ error: getSafeErrorMessage(e) }), { status: 400, headers: { "Content-Type": "application/json" } });
       await logApi(ctx, { key, status: 400 }, request, start);
       return resp;
     }
@@ -485,7 +518,7 @@ async function handleDnsRoutes(ctx: any, request: Request, key: any, domainId: a
       await logApi(ctx, { key, status: 200 }, request, start);
       return resp;
     } catch (e: any) {
-      const resp = new Response(JSON.stringify({ error: e.message }), { status: 400, headers: { "Content-Type": "application/json" } });
+      const resp = new Response(JSON.stringify({ error: getSafeErrorMessage(e) }), { status: 400, headers: { "Content-Type": "application/json" } });
       await logApi(ctx, { key, status: 400 }, request, start);
       return resp;
     }
@@ -501,7 +534,7 @@ async function handleDnsRoutes(ctx: any, request: Request, key: any, domainId: a
       await logApi(ctx, { key, status: 200 }, request, start);
       return resp;
     } catch (e: any) {
-      const resp = new Response(JSON.stringify({ error: e.message }), { status: 400, headers: { "Content-Type": "application/json" } });
+      const resp = new Response(JSON.stringify({ error: getSafeErrorMessage(e) }), { status: 400, headers: { "Content-Type": "application/json" } });
       await logApi(ctx, { key, status: 400 }, request, start);
       return resp;
     }
