@@ -62,7 +62,7 @@ export function ClientDomains() {
   // --- Handlers using useAsyncFeedback ---
 
   const { execute: claimDomain, isLoading: claimLoading } = useAsyncFeedback(claimDomainAction, {
-    title: "Domain Claimed!",
+    successTitle: "Domain Claimed!",
     successMessage: `${subdomain}.${selectedRoot || "doofs.tech"} is now yours.`,
     onSuccess: () => {
         setIsClaimOpen(false);
@@ -73,7 +73,7 @@ export function ClientDomains() {
   });
 
   const { execute: deleteDomain, isLoading: deleteLoading } = useAsyncFeedback(deleteDomainAction, {
-    title: "Domain Deleted",
+    successTitle: "Domain Deleted",
     successMessage: "Domain and all DNS records have been removed.",
     onSuccess: () => setDeleteId(null)
   });

@@ -43,9 +43,12 @@ export const createRecord = mutation({
         await checkDnsRecordLimit(ctx, args.domainId);
 
         // Validation
+        // This validation call relies on convex/validators.ts
+        // Allowed characters: letters, numbers, hyphens, underscores, dots.
         const name = validateDnsName(args.name);
         const content = validateRecordContent(args.type, args.content);
         const fqdn = computeFqdn(name, domain.subdomain, domain.rootDomain);
+
 
         // Enforce Scope strictly
         const apex = `${domain.subdomain}.${domain.rootDomain}`;
