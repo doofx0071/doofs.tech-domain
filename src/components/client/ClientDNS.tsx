@@ -1,13 +1,14 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Globe, ShieldCheck, Loader2, MoreVertical, Edit, Copy, BookOpen, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Globe, ShieldCheck, Loader2, MoreVertical, Edit, Copy, BookOpen } from 'lucide-react';
 import { useQuery, useMutation, useAction } from "convex/react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { api } from "../../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
+import { useAsyncFeedback } from "@/hooks/use-async-feedback";
 import {
   Accordion,
   AccordionContent,
@@ -61,15 +62,18 @@ interface GroupedRecords {
 export function ClientDNS() {
   const records = useQuery(api.dns.listAllMyRecords, {});
   const domains = useQuery(api.domains.listMine, {});
-  const createRecord = useMutation(api.dns.createRecord);
-  const deleteRecord = useMutation(api.dns.deleteRecord);
-  const updateRecord = useMutation(api.dns.updateRecord);
-  const verifyPropagation = useAction(api.dns.verifyPropagation);
+  
+  // Mutations wrapped in feedback hook
+  const createRecordMutation = useMutation(api.dns.createRecord);
+  const deleteRecordMutation = useMutation(api.dns.deleteRecord);
+  const updateRecordMutation = useMutation(api.dns.updateRecord);
+  const verifyPropagationAction = useAction(api.dns.verifyPropagation);
+  
   const { toast } = useToast();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [createLoading, setCreateLoading] = useState(false);
+  
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -111,56 +115,92 @@ export function ClientDNS() {
     return Array.from(domainMap.values());
   }, [domains, records]);
 
-  // Pre-select domain when opening add dialog for specific domain
-  const openAddForDomain = (domainId: string) => {
-    setSelectedDomain(domainId);
-    setIsAddOpen(true);
-  };
+  // --- Handlers using useAsyncFeedback ---
+
+  const { execute: createRecord, isLoading: createLoading } = useAsyncFeedback(createRecordMutation, {
+    title: "Record Created",
+    successMessage: "Your new DNS record has been added. Propagation may take a few minutes.",
+    onSuccess: () => {
+      setIsAddOpen(false);
+      resetForm();
+    }
+  });
+
+  const { execute: updateRecord, isLoading: updateLoading } = useAsyncFeedback(updateRecordMutation, {
+    title: "Record Updated",
+    successMessage: "Your changes are syncing to Cloudflare.",
+    onSuccess: () => {
+      setIsEditOpen(false);
+      setEditingRecord(null);
+      resetForm();
+    }
+  });
+
+  const { execute: deleteRecord } = useAsyncFeedback(deleteRecordMutation, {
+    title: "Record Deleted",
+    successMessage: "The DNS record has been queued for deletion.",
+    onSuccess: () => setDeleteId(null)
+  });
+
+  const { execute: verifyPropagation } = useAsyncFeedback(verifyPropagationAction, {
+    // Custom handling for verification so we don't show generic success
+    onError: () => {
+        // Error toast already handled by hook
+    }
+  });
 
   const handleCreate = async () => {
     if (!selectedDomain || !name || !content) return;
-
-    setCreateLoading(true);
-    try {
-      await createRecord({
-        domainId: selectedDomain as any,
-        type,
-        name,
-        content,
-        priority: type === "MX" ? parseInt(priority) || 10 : undefined,
-        ttl: ttl ? parseInt(ttl) : undefined,
-      });
-      toast({ title: "Record created", description: "Propagation may take a few minutes." });
-      setIsAddOpen(false);
-      resetForm();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally {
-      setCreateLoading(false);
-    }
+    
+    await createRecord({
+      domainId: selectedDomain as any,
+      type,
+      name,
+      content,
+      priority: type === "MX" ? parseInt(priority) || 10 : undefined,
+      ttl: ttl ? parseInt(ttl) : undefined,
+    });
   };
 
   const handleUpdate = async () => {
     if (!editingRecord || !name || !content) return;
 
-    setCreateLoading(true);
-    try {
-      await updateRecord({
-        recordId: editingRecord._id,
-        type,
-        name,
-        content,
-        priority: type === "MX" ? parseInt(priority) || 10 : undefined,
-        ttl: ttl ? parseInt(ttl) : undefined,
-      });
-      toast({ title: "Record updated", description: "Changes syncing to Cloudflare." });
-      setIsEditOpen(false);
-      setEditingRecord(null);
-      resetForm();
-    } catch (e: any) {
-      toast({ title: "Update Failed", description: e.message, variant: "destructive" });
-    } finally {
-      setCreateLoading(false);
+    await updateRecord({
+      recordId: editingRecord._id,
+      type,
+      name,
+      content,
+      priority: type === "MX" ? parseInt(priority) || 10 : undefined,
+      ttl: ttl ? parseInt(ttl) : undefined,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    await deleteRecord({ recordId: deleteId as any });
+  };
+
+  const handleVerify = async (record: any) => {
+    toast({ title: "Verifying propagation...", description: "Checking Cloudflare Public DNS..." });
+    
+    // We call execute() but handle the result manually because the "success" 
+    // depends on the boolean inside the result, not just the API call succeeding.
+    const result = await verifyPropagation({ recordId: record._id });
+    
+    if (result) {
+        if (result.propagated) {
+          toast({
+            title: "✅ Propagated",
+            description: "Record is visible on public DNS.",
+            variant: "default" // "success" if available
+          });
+        } else {
+          toast({
+            title: "⏳ Not yet propagated",
+            description: "Cloudflare DoH does not see this value yet. Please wait a moment.",
+            variant: "destructive"
+          });
+        }
     }
   };
 
@@ -185,37 +225,6 @@ export function ClientDNS() {
     setEditingRecord(null);
   };
 
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    try {
-      await deleteRecord({ recordId: deleteId as any });
-      toast({ title: "Record deletion queued" });
-      setDeleteId(null);
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
-  };
-
-  const handleVerify = async (record: any) => {
-    toast({ title: "Verifying propagation...", description: "Checking Cloudflare Public DNS..." });
-    try {
-      const result = await verifyPropagation({ recordId: record._id });
-      if (result.propagated) {
-        toast({
-          title: "✅ Propagated",
-          description: "Record is visible on public DNS.",
-        });
-      } else {
-        toast({
-          title: "⏳ Not yet propagated",
-          description: "Cloudflare DoH does not see this value yet.",
-          variant: "destructive"
-        });
-      }
-    } catch (e: any) {
-      toast({ title: "Verification Error", description: e.message, variant: "destructive" });
-    }
-  };
 
   // Loading state
   if (!records || !domains) {
@@ -574,11 +583,12 @@ export function ClientDNS() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdate} disabled={createLoading || !content}>
-              {createLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleUpdate} disabled={updateLoading || !content}>
+              {updateLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 

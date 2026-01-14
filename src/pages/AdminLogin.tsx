@@ -9,6 +9,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
+import { formatError } from "@/lib/error-handling";
 
 // Admin route - MUST be configured via VITE_ADMIN_ROUTE environment variable
 const ADMIN_PATH = import.meta.env.VITE_ADMIN_ROUTE;
@@ -45,10 +46,11 @@ export const AdminLogin = () => {
           .catch((error) => {
             toast({
               title: "Error",
-              description: error.message,
+              description: formatError(error),
               variant: "destructive",
             });
             // Not admin and can't become admin, redirect to regular dashboard
+
             navigate("/dashboard");
           });
       } else if (hasAdmin === true) {

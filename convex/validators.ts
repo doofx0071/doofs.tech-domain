@@ -30,10 +30,10 @@ const RESERVED = new Set([
 
 export function validateSubdomainLabel(label: string) {
     const s = label.trim().toLowerCase();
-    if (s.length < 3 || s.length > 32) throw new Error("Subdomain must be 3–32 chars.");
-    if (!SUBDOMAIN_RE.test(s)) throw new Error("Use lowercase letters, numbers, hyphens only.");
-    if (s.startsWith("-") || s.endsWith("-")) throw new Error("Subdomain cannot start/end with '-'.");
-    if (RESERVED.has(s)) throw new Error("That subdomain is reserved.");
+    if (s.length < 3 || s.length > 32) throw new Error("Subdomain name must be between 3 and 32 characters.");
+    if (!SUBDOMAIN_RE.test(s)) throw new Error("Subdomain can only contain lowercase letters, numbers, and hyphens.");
+    if (s.startsWith("-") || s.endsWith("-")) throw new Error("Subdomain cannot start or end with a hyphen.");
+    if (RESERVED.has(s)) throw new Error("This subdomain is reserved and cannot be used.");
     return s;
 }
 
@@ -44,42 +44,43 @@ export function validateDnsName(name: string) {
     if (s === "@") return "@";
 
     // Otherwise, strict relative name rules
-    if (s.length > 63) throw new Error("DNS name segment too long.");
-    if (!SUBDOMAIN_RE.test(s)) throw new Error("Invalid DNS name format.");
-    if (s.startsWith("-") || s.endsWith("-")) throw new Error("DNS name cannot start/end with '-'.");
+    if (s.length > 63) throw new Error("DNS name segment is too long (max 63 characters).");
+    if (!SUBDOMAIN_RE.test(s)) throw new Error("Invalid DNS name format. Use letters, numbers, and hyphens only.");
+    if (s.startsWith("-") || s.endsWith("-")) throw new Error("DNS name cannot start or end with a hyphen.");
 
     return s;
 }
 
 export function validateRecordContent(type: string, content: string) {
     const c = content.trim();
-    if (!c) throw new Error("Content cannot be empty.");
+    if (!c) throw new Error("Record content cannot be empty.");
 
     switch (type) {
         case "A":
             // Validate IPv4 address format and octet ranges (0-255)
-            if (!isValidIPv4(c)) throw new Error("Invalid IPv4 address.");
+            if (!isValidIPv4(c)) throw new Error("Invalid IPv4 address. Please enter a valid address like 1.2.3.4.");
             break;
         case "AAAA":
             // Basic check for colon to detect IPv6 roughly
-            if (!c.includes(":")) throw new Error("Invalid IPv6 address.");
+            if (!c.includes(":")) throw new Error("Invalid IPv6 address format.");
             break;
         case "CNAME":
             // Should be a hostname
-            if (c.includes("://") || c.includes("/")) throw new Error("CNAME must be a hostname, not a URL.");
+            if (c.includes("://") || c.includes("/")) throw new Error("CNAME must be a hostname (e.g., example.com), not a full URL.");
             break;
         case "TXT":
-            if (c.length > 2048) throw new Error("TXT record too long.");
+            if (c.length > 2048) throw new Error("TXT record content is too long (max 2048 characters).");
             break;
         case "MX":
             // Basic hostname check
-            if (!c.includes(".") && c !== "@") throw new Error("MX content should be a hostname");
+            if (!c.includes(".") && c !== "@") throw new Error("MX content must be a valid hostname.");
             break;
         default:
             break;
     }
     return c;
 }
+
 
 /**
  * Validate IPv4 address format and range

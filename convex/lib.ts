@@ -12,11 +12,11 @@ export async function requireActivePlatformDomain(ctx: any, rootDomain: string) 
 
 export async function requireUserId(ctx: any) {
     const userId = await auth.getUserId(ctx);
-    if (!userId) throw new Error("User must be authenticated");
+    if (!userId) throw new Error("You must be logged in to perform this action.");
 
     // Fetch user to check status and session
     const user = await ctx.db.get(userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error("User account not found.");
 
     // 1. Suspended/Banned Check
     if (user.status === "suspended" || user.status === "banned") {

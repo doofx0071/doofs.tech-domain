@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useAsyncFeedback } from "@/hooks/use-async-feedback";
 import {
   Dialog,
   DialogContent,
@@ -43,20 +44,42 @@ import { Turnstile } from '@marsidev/react-turnstile';
 export function ClientDomains() {
   const domains = useQuery(api.domains.listMine, {});
   const platformDomains = useQuery(api.platformDomains.list, { search: "" });
-  const claimDomain = useAction(api.domains.claim);
-  const deleteDomain = useAction(api.domains.remove);
+  
+  const claimDomainAction = useAction(api.domains.claim);
+  const deleteDomainAction = useAction(api.domains.remove);
+  
   const { toast } = useToast();
 
   const [isClaimOpen, setIsClaimOpen] = useState(false);
   const [subdomain, setSubdomain] = useState("");
   const [selectedRoot, setSelectedRoot] = useState("");
-  const [claimLoading, setClaimLoading] = useState(false);
+  
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteSubdomain, setDeleteSubdomain] = useState("");
-  const [deleteLoading, setDeleteLoading] = useState(false);
   const [token, setToken] = useState("");
   const convex = useConvex();
 
+  // --- Handlers using useAsyncFeedback ---
+
+  const { execute: claimDomain, isLoading: claimLoading } = useAsyncFeedback(claimDomainAction, {
+    title: "Domain Claimed!",
+    successMessage: `${subdomain}.${selectedRoot || "doofs.tech"} is now yours.`,
+    onSuccess: () => {
+        setIsClaimOpen(false);
+        setSubdomain("");
+        setToken("");
+        localStorage.removeItem("claim_pending");
+    }
+  });
+
+  const { execute: deleteDomain, isLoading: deleteLoading } = useAsyncFeedback(deleteDomainAction, {
+    title: "Domain Deleted",
+    successMessage: "Domain and all DNS records have been removed.",
+    onSuccess: () => setDeleteId(null)
+  });
+
+  // Export is a query call, not a mutation/action hook, so we wrap it manually or just use try/catch with formatError
+  // But wait, useAsyncFeedback expects an async function. We can pass an inline async function.
   const handleExport = async (domainId: string, domainName: string) => {
     try {
       const zoneFileContent = await convex.query(api.dns.exportZoneFile, { domainId: domainId as any });
@@ -72,6 +95,7 @@ export function ClientDomains() {
       window.URL.revokeObjectURL(url);
       toast({ title: "Exported", description: `Zone file for ${domainName} downloaded.` });
     } catch (e: any) {
+      // Manual formatting since we aren't using the hook here (it's a one-off query)
       toast({ title: "Export Failed", description: e.message, variant: "destructive" });
     }
   };
@@ -95,16 +119,7 @@ export function ClientDomains() {
 
   const confirmDelete = async () => {
     if (!deleteId) return;
-    setDeleteLoading(true);
-    try {
-      await deleteDomain({ id: deleteId as any });
-      toast({ title: "Domain deleted", description: "Domain and all DNS records have been removed." });
-      setDeleteId(null);
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally {
-      setDeleteLoading(false);
-    }
+    await deleteDomain({ id: deleteId as any });
   };
 
   const handleClaim = async () => {
@@ -116,24 +131,9 @@ export function ClientDomains() {
       return;
     }
 
-    setClaimLoading(true);
-    try {
-      await claimDomain({ subdomain, rootDomain: root, token });
-      toast({ title: "Success", description: `${subdomain}.${root} claimed!` });
-      setIsClaimOpen(false);
-      setSubdomain("");
-      setToken(""); // Reset token
-      localStorage.removeItem("claim_pending");
-    } catch (e: any) {
-      toast({
-        title: "Claim Failed",
-        description: e.message.includes("Token is not valid") ? "Please refresh the page content" : e.message,
-        variant: "destructive"
-      });
-    } finally {
-      setClaimLoading(false);
-    }
+    await claimDomain({ subdomain, rootDomain: root, token });
   };
+
 
   return (
     <div className="space-y-6">

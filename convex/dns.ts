@@ -1,7 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query, action } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { auth } from "./auth";
 import { requireUserId, now, checkDnsRecordLimit } from "./lib";
+
 import { checkDnsOperationsRateLimit } from "./ratelimit";
 import { validateDnsName, validateRecordContent, computeFqdn } from "./validators";
 import { assertDomainOwner } from "./domains";
@@ -267,7 +269,11 @@ export const verifyPropagation = action({
         recordId: v.id("dns_records"),
     },
     handler: async (ctx, args) => {
-        const userId = await requireUserId(ctx); // Ensure auth
+        const userId = await auth.getUserId(ctx);
+        if (!userId) throw new Error("Unauthenticated");
+
+        // Verify user status (suspension, etc)
+        await ctx.runQuery(internal.users.verifyUserInternal);
 
         // We need to fetch the record first to get the name/type
         // Actions can't query DB directly, so we need a helper query or pass details
@@ -276,10 +282,11 @@ export const verifyPropagation = action({
 
         if (!record) throw new Error("Record not found");
         if (record.userId !== userId) {
-            // Strict userId match for now
+            throw new Error("Unauthorized");
         }
 
         const type = record.type;
+
         const name = record.fqdn;
 
         // Query Cloudflare DoH

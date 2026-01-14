@@ -1,6 +1,8 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { auth } from "./auth";
+import { requireUserId } from "./lib";
+
 
 export const currentUser = query({
   args: {},
@@ -49,3 +51,11 @@ export const completeOnboarding = mutation({
     });
   },
 });
+
+export const verifyUserInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await requireUserId(ctx);
+  },
+});
+
