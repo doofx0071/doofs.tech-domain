@@ -6,6 +6,7 @@ import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { AppRoutes } from "./AppRoutes";
+import { ConvexErrorBoundary } from "@/components/ConvexErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +28,9 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AppRoutes />
+            <ConvexErrorBoundary>
+              <AppRoutes />
+            </ConvexErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
