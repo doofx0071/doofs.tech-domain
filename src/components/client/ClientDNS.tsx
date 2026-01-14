@@ -356,7 +356,13 @@ export function ClientDNS() {
                               <TableCell>
                                 <Badge variant="outline" className="text-[10px]">{record.type}</Badge>
                               </TableCell>
-                              <TableCell className="font-mono text-sm">{record.name}</TableCell>
+                              <TableCell className="font-mono text-sm">
+                                <div>{record.name}</div>
+                                {record.name !== "@" && record.fqdn && (
+                                  <div className="text-[10px] text-muted-foreground break-all">{record.fqdn}</div>
+                                )}
+                              </TableCell>
+
                               <TableCell className="font-mono text-xs max-w-[150px] truncate" title={record.content}>
                                 {record.content}
                               </TableCell>
