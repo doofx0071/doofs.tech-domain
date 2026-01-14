@@ -222,7 +222,7 @@ export const completeUpsert = internalMutation({
                 type: "success",
                 title: "DNS Record Active",
                 message: `User created DNS record ${record.fqdn}.\n\n${details}`,
-                link: `/admin/dashboard/domains`,
+                link: `/admin/dashboard/domains`, // Frontend will use VITE_ADMIN_ROUTE to construct actual path
                 domainId: record.domainId,
                 rootDomain: record.rootDomain,
                 adminDetails: `Provider ID: ${args.providerRecordId}\n\nRaw Record:\n${JSON.stringify(record, null, 2)}`
@@ -260,7 +260,7 @@ export const completeDelete = internalMutation({
                     type: "info",
                     title: "DNS Record Deleted",
                     message: `User deleted DNS record ${record.fqdn}.\n\n${details}`,
-                    link: `/admin/dashboard/domains`,
+                    link: `/admin/dashboard/domains`, // Frontend will use VITE_ADMIN_ROUTE to construct actual path
                     domainId: record.domainId,
                     rootDomain: record.rootDomain
                 });
@@ -303,7 +303,7 @@ export const completeJob = internalMutation({
                     type: "error",
                     title: "DNS Update Failed",
                     message: `Failed to update DNS record ${record.fqdn}.\n\n${details}`,
-                    link: `/admin/dashboard/domains`,
+                    link: `/admin/dashboard/domains`, // Frontend will use VITE_ADMIN_ROUTE to construct actual path
                     domainId: record.domainId,
                     rootDomain: record.rootDomain,
                     adminDetails: JSON.stringify({ error: args.error, jobId: args.jobId, record })

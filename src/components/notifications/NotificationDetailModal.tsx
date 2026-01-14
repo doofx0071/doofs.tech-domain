@@ -13,6 +13,9 @@ import { Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 
+// Admin route - configurable via environment variable
+const ADMIN_PATH = import.meta.env.VITE_ADMIN_ROUTE || "/admin";
+
 interface NotificationDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -36,7 +39,7 @@ export function NotificationDetailModal({ isOpen, onClose, notification }: Notif
 
     // Determine the link based on role
     // Client: /dashboard/dns
-    // Admin: /admin-122303/dashboard/domains?openRoot=rootDomain
+    // Admin: ${ADMIN_PATH}/dashboard/domains?openRoot=rootDomain
     const getLink = (): string | null => {
         if (!notification.link) return null;
 
@@ -45,14 +48,14 @@ export function NotificationDetailModal({ isOpen, onClose, notification }: Notif
             // Prefer rootDomain (platform domain) for admin deep-linking
             const rootDomain = notification.rootDomain;
             if (rootDomain) {
-                return `/admin-122303/dashboard/domains?openRoot=${encodeURIComponent(rootDomain)}`;
+                return `${ADMIN_PATH}/dashboard/domains?openRoot=${encodeURIComponent(rootDomain)}`;
             }
             // Fallback to domainId if no rootDomain
             const domainId = notification.domainId;
             if (domainId) {
-                return `/admin-122303/dashboard/domains?openDns=${domainId}`;
+                return `${ADMIN_PATH}/dashboard/domains?openDns=${domainId}`;
             }
-            return "/admin-122303/dashboard/domains";
+            return `${ADMIN_PATH}/dashboard/domains`;
         }
 
         // For clients, redirect to DNS page

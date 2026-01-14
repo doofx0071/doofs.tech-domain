@@ -19,9 +19,9 @@ import Tutorials from "./pages/Tutorials";
 import NotFound from "./pages/NotFound";
 import Health from "./pages/Health";
 
-// Security: Admin route uses standard path - access control is enforced by AdminRoute component
-// which validates admin role via backend. No security-through-obscurity needed.
-const ADMIN_PATH = "/admin";
+// Admin route - configurable via environment variable for obscurity
+// Real security is enforced by AdminRoute component which validates admin role via backend
+const ADMIN_PATH = import.meta.env.VITE_ADMIN_ROUTE || "/admin";
 
 export const AppRoutes = () => {
     return (

@@ -10,8 +10,8 @@ import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
 
-// Security: Standard admin path - access control enforced by backend
-const ADMIN_PATH = "/admin";
+// Admin route - configurable via environment variable
+const ADMIN_PATH = import.meta.env.VITE_ADMIN_ROUTE || "/admin";
 
 export const AdminLogin = () => {
   const { theme } = useTheme();
