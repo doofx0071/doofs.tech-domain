@@ -44,9 +44,19 @@ export function now() {
 
 export async function verifyTurnstile(token: string) {
     const secret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
+    
+    // Allow explicit dev bypass only when TURNSTILE_DEV_BYPASS=true
+    // This must be explicitly set - missing secret alone does NOT bypass
+    if (process.env.TURNSTILE_DEV_BYPASS === "true") {
+        console.warn("TURNSTILE_DEV_BYPASS is enabled - skipping Turnstile verification (Dev Mode Only)");
+        return true;
+    }
+    
     if (!secret) {
-        console.warn("CLOUDFLARE_TURNSTILE_SECRET_KEY is not set. Skipping verification (Dev Mode).");
-        return true; // Use strict check in prod
+        // Fail secure: if secret is not configured, reject the request
+        // This prevents accidental bypass in production
+        console.error("CLOUDFLARE_TURNSTILE_SECRET_KEY is not set. Turnstile verification cannot proceed.");
+        throw new Error("CAPTCHA verification is not configured. Please contact the administrator.");
     }
 
     const formData = new FormData();

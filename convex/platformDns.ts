@@ -4,9 +4,10 @@
  */
 
 import { v } from "convex/values";
-import { action, mutation, internalQuery, internalMutation } from "./_generated/server";
+import { action, mutation, internalQuery, internalMutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireAdmin, now } from "./lib";
+import { auth } from "./auth";
 
 // Internal query to get platform domain
 export const getPlatformDomainInternal = internalQuery({
@@ -16,10 +17,26 @@ export const getPlatformDomainInternal = internalQuery({
     },
 });
 
+// Internal query to verify admin status for actions
+export const verifyAdminInternal = internalQuery({
+    args: { userId: v.id("users") },
+    handler: async (ctx, args) => {
+        const user = await ctx.db.get(args.userId);
+        return user?.role === "admin";
+    },
+});
+
 // List DNS records from Cloudflare for a platform domain
 export const listRecords = action({
     args: { platformDomainId: v.id("platform_domains") },
     handler: async (ctx, args): Promise<any[]> => {
+        // Verify admin authentication
+        const userId = await auth.getUserId(ctx);
+        if (!userId) throw new Error("Authentication required");
+        
+        const isAdmin = await ctx.runQuery(internal.platformDns.verifyAdminInternal, { userId });
+        if (!isAdmin) throw new Error("Admin access required");
+
         // Get platform domain info
         const platformDomain = await ctx.runQuery(internal.platformDns.getPlatformDomainInternal, { id: args.platformDomainId });
         if (!platformDomain) throw new Error("Platform domain not found");
@@ -208,7 +225,13 @@ export const deleteRecordByProviderId = action({
         providerRecordId: v.string()
     },
     handler: async (ctx, args) => {
-        // Verify admin (via internal query or just trust action context)
+        // Verify admin authentication
+        const userId = await auth.getUserId(ctx);
+        if (!userId) throw new Error("Authentication required");
+        
+        const isAdmin = await ctx.runQuery(internal.platformDns.verifyAdminInternal, { userId });
+        if (!isAdmin) throw new Error("Admin access required");
+
         const platformDomain = await ctx.runQuery(internal.platformDns.getPlatformDomainInternal, { id: args.platformDomainId });
         if (!platformDomain) throw new Error("Platform domain not found");
         if (!platformDomain.zoneId) throw new Error("Platform domain has no Cloudflare zone");

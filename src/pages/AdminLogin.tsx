@@ -10,7 +10,8 @@ import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
 
-const adminRoute = import.meta.env.VITE_ADMIN_ROUTE || "/admin-122303";
+// Security: Standard admin path - access control enforced by backend
+const ADMIN_PATH = "/admin";
 
 export const AdminLogin = () => {
   const { theme } = useTheme();
@@ -26,7 +27,7 @@ export const AdminLogin = () => {
   // Redirect to admin dashboard if already authenticated as admin
   useEffect(() => {
     if (isAuthenticated && user?.role === "admin") {
-      navigate(`${adminRoute}/dashboard`);
+      navigate(`${ADMIN_PATH}/dashboard`);
     } else if (isAuthenticated && user?.role !== "admin") {
       // If logged in but not admin, check if we need to make them admin
       if (hasAdmin === false && !isSettingUpAdmin) {

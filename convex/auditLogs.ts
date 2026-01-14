@@ -173,6 +173,7 @@ export const getAllAuditLogs = query({
 
 /**
  * Get audit logs statistics for admin dashboard
+ * ADMIN ONLY
  */
 export const getAuditLogsStats = query({
   args: {
@@ -184,7 +185,11 @@ export const getAuditLogsStats = query({
       throw new Error("User must be authenticated");
     }
 
-    // TODO: Add admin role check here
+    // Security: Only admins can view audit log statistics
+    const user = await ctx.db.get(currentUserId);
+    if (user?.role !== "admin") {
+      throw new Error("Only admins can view audit log statistics");
+    }
 
     const timeRange = args.timeRange || "7d";
     let startTime = Date.now();
@@ -234,6 +239,7 @@ export const getAuditLogsStats = query({
 
 /**
  * Delete old audit logs (cleanup function - run via cron or manually)
+ * ADMIN ONLY - prevents unauthorized deletion of forensic evidence
  */
 export const deleteOldAuditLogs = mutation({
   args: {
@@ -245,7 +251,16 @@ export const deleteOldAuditLogs = mutation({
       throw new Error("User must be authenticated");
     }
 
-    // TODO: Add admin role check here
+    // Security: Only admins can delete audit logs
+    const user = await ctx.db.get(currentUserId);
+    if (user?.role !== "admin") {
+      throw new Error("Only admins can delete audit logs");
+    }
+
+    // Validate input to prevent abuse
+    if (args.daysToKeep < 1) {
+      throw new Error("daysToKeep must be at least 1");
+    }
 
     const cutoffTime = Date.now() - args.daysToKeep * 24 * 60 * 60 * 1000;
 
@@ -260,6 +275,15 @@ export const deleteOldAuditLogs = mutation({
       await ctx.db.delete(log._id);
       deletedCount++;
     }
+
+    // Log the deletion action itself
+    await ctx.db.insert("auditLogs", {
+      userId: currentUserId,
+      action: "audit_logs_cleaned",
+      details: `Deleted ${deletedCount} audit logs older than ${args.daysToKeep} days`,
+      timestamp: Date.now(),
+      status: "success",
+    });
 
     return { deletedCount };
   },

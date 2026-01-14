@@ -57,8 +57,8 @@ export function validateRecordContent(type: string, content: string) {
 
     switch (type) {
         case "A":
-            // Basic IPv4 regex
-            if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(c)) throw new Error("Invalid IPv4 address.");
+            // Validate IPv4 address format and octet ranges (0-255)
+            if (!isValidIPv4(c)) throw new Error("Invalid IPv4 address.");
             break;
         case "AAAA":
             // Basic check for colon to detect IPv6 roughly
@@ -79,6 +79,26 @@ export function validateRecordContent(type: string, content: string) {
             break;
     }
     return c;
+}
+
+/**
+ * Validate IPv4 address format and range
+ * Each octet must be 0-255
+ */
+function isValidIPv4(ip: string): boolean {
+    const parts = ip.split(".");
+    if (parts.length !== 4) return false;
+    
+    for (const part of parts) {
+        // Check that part is a valid number (no leading zeros except for "0" itself)
+        if (!/^\d+$/.test(part)) return false;
+        if (part.length > 1 && part.startsWith("0")) return false; // No leading zeros
+        
+        const num = parseInt(part, 10);
+        if (isNaN(num) || num < 0 || num > 255) return false;
+    }
+    
+    return true;
 }
 
 export function computeFqdn(name: string, subdomain: string, rootDomain: string) {

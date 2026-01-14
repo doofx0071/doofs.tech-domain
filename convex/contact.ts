@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAdmin } from "./lib";
 import { auth } from "./auth";
+import { checkContactFormRateLimit } from "./ratelimit";
 
 export const submit = mutation({
     args: {
@@ -12,6 +13,10 @@ export const submit = mutation({
     },
     handler: async (ctx, args) => {
         const userId = await auth.getUserId(ctx);
+
+        // Apply rate limiting based on email address
+        // This prevents spam even from unauthenticated users
+        await checkContactFormRateLimit(ctx, args.email);
 
         await ctx.db.insert("messages", {
             name: args.name,

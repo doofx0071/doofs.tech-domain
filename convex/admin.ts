@@ -9,8 +9,30 @@ import { auth } from "./auth";
 import { requireAdmin, requireUserId } from "./lib";
 
 /**
+ * Check if an email is in the allowed admin list
+ * Set ALLOWED_ADMIN_EMAILS env var as comma-separated list of emails
+ * If not set, no one can become the first admin programmatically
+ */
+function isEmailAllowedAsAdmin(email: string | undefined): boolean {
+  const allowedEmails = process.env.ALLOWED_ADMIN_EMAILS;
+  
+  // If no allowlist is configured, block programmatic first-admin creation
+  // Admin must be manually assigned via Convex dashboard in this case
+  if (!allowedEmails) {
+    return false;
+  }
+  
+  if (!email) {
+    return false;
+  }
+  
+  const allowedList = allowedEmails.split(",").map(e => e.trim().toLowerCase());
+  return allowedList.includes(email.toLowerCase());
+}
+
+/**
  * Make a user an admin
- * First user to call this becomes admin, then requires admin auth
+ * First user to call this becomes admin (if on allowlist), then requires admin auth
  */
 export const makeUserAdmin = mutation({
   args: {
@@ -23,8 +45,15 @@ export const makeUserAdmin = mutation({
       .withIndex("by_role", (q) => q.eq("role", "admin"))
       .collect();
 
-    // If this is the first admin, allow creation
+    // If this is the first admin, verify email allowlist
     if (existingAdmins.length === 0) {
+      const targetUser = await ctx.db.get(args.userId);
+      if (!isEmailAllowedAsAdmin(targetUser?.email)) {
+        throw new Error(
+          "Email not authorized for admin access. Contact the platform operator to be added to the admin allowlist."
+        );
+      }
+      
       await ctx.db.patch(args.userId, { role: "admin" as "admin" | "user" });
       return { success: true, message: "First admin created successfully!" };
     }
@@ -39,7 +68,7 @@ export const makeUserAdmin = mutation({
 
 /**
  * Make yourself admin (one-time use for initial setup)
- * This checks if you're the first user or if no admins exist
+ * SECURITY: Only works if your email is in ALLOWED_ADMIN_EMAILS env var
  */
 export const makeMeAdmin = mutation({
   args: {},
@@ -56,6 +85,14 @@ export const makeMeAdmin = mutation({
       throw new Error("An admin already exists. Contact existing admin for access.");
     }
 
+    // Security: Verify the user's email is on the allowed admin list
+    const user = await ctx.db.get(userId);
+    if (!isEmailAllowedAsAdmin(user?.email)) {
+      throw new Error(
+        "Your email is not authorized for admin access. Contact the platform operator to be added to the admin allowlist, or manually assign admin role via Convex dashboard."
+      );
+    }
+
     // Make this user the first admin
     await ctx.db.patch(userId, { role: "admin" as "admin" | "user" });
 
@@ -63,7 +100,7 @@ export const makeMeAdmin = mutation({
     await ctx.db.insert("auditLogs", {
       userId,
       action: "admin_created",
-      details: "First admin user created via admin login",
+      details: `First admin user created via admin login (${user?.email})`,
       timestamp: Date.now(),
       status: "success",
     });

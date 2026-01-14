@@ -19,7 +19,9 @@ import Tutorials from "./pages/Tutorials";
 import NotFound from "./pages/NotFound";
 import Health from "./pages/Health";
 
-const adminRoute = import.meta.env.VITE_ADMIN_ROUTE || "/admin-122303";
+// Security: Admin route uses standard path - access control is enforced by AdminRoute component
+// which validates admin role via backend. No security-through-obscurity needed.
+const ADMIN_PATH = "/admin";
 
 export const AppRoutes = () => {
     return (
@@ -28,7 +30,7 @@ export const AppRoutes = () => {
             <Route path="/auth/popup-callback" element={<PopupCallback />} />
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
-            <Route path={adminRoute} element={<AdminLogin />} />
+            <Route path={ADMIN_PATH} element={<AdminLogin />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/about" element={<About />} />
@@ -38,7 +40,7 @@ export const AppRoutes = () => {
             <Route path="/contact" element={<Contact />} />
             <Route path="/health" element={<Health />} />
             <Route
-                path={`${adminRoute}/dashboard/*`}
+                path={`${ADMIN_PATH}/dashboard/*`}
                 element={
                     <AdminRoute>
                         <AdminDashboard />

@@ -90,7 +90,12 @@ http.route({
   path: "/logo-light",
   method: "GET",
   handler: httpAction(async (ctx) => {
-    const storageId = process.env.LOGO_LIGHT_STORAGE_ID || "kg2f07w27gqfmhnat12h105hys7yt3a5";
+    const storageId = process.env.LOGO_LIGHT_STORAGE_ID;
+
+    if (!storageId) {
+      console.warn("LOGO_LIGHT_STORAGE_ID environment variable not configured");
+      return new Response("Logo not configured", { status: 503 });
+    }
 
     const blob = await ctx.storage.get(storageId as any);
 
@@ -112,7 +117,12 @@ http.route({
   path: "/logo-dark",
   method: "GET",
   handler: httpAction(async (ctx) => {
-    const storageId = process.env.LOGO_DARK_STORAGE_ID || "kg29w6s9t5cjwbh1cz82g1has97yvfhe";
+    const storageId = process.env.LOGO_DARK_STORAGE_ID;
+
+    if (!storageId) {
+      console.warn("LOGO_DARK_STORAGE_ID environment variable not configured");
+      return new Response("Logo not configured", { status: 503 });
+    }
 
     const blob = await ctx.storage.get(storageId as any);
 

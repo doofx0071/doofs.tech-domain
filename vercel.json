@@ -2,7 +2,7 @@
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "https://ceaseless-opossum-708.convex.site/api/$1"
+            "destination": "https://affable-peacock-770.convex.site/api/$1"
         },
         {
             "source": "/(.*)",
