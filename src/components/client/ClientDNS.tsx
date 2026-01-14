@@ -190,15 +190,15 @@ export function ClientDNS() {
     if (result) {
         if (result.propagated) {
           toast({
-            title: "✅ Propagated",
+            title: "Record Propagated",
             description: "Record is visible on public DNS.",
-            variant: "default" // "success" if available
+            variant: "success"
           });
         } else {
           toast({
-            title: "⏳ Not yet propagated",
+            title: "Not yet propagated",
             description: "Cloudflare DoH does not see this value yet. Please wait a moment.",
-            variant: "destructive"
+            variant: "warning"
           });
         }
     }

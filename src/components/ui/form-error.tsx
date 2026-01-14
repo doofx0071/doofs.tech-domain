@@ -1,4 +1,4 @@
-import { AlertCircle } from "lucide-react";
+import { AlertOctagon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FormErrorProps {
@@ -11,7 +11,7 @@ export function FormError({ message, className }: FormErrorProps) {
 
     return (
         <div className={cn("bg-destructive/15 p-3 rounded-md flex items-center gap-x-2 text-sm text-destructive", className)}>
-            <AlertCircle className="h-4 w-4" />
+            <AlertOctagon className="h-4 w-4" />
             <p>{message}</p>
         </div>
     );

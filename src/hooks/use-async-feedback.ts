@@ -44,7 +44,7 @@ export function useAsyncFeedback<TArgs, TResult>(
                 toast({
                     title: options.title || "Success",
                     description: options.successMessage,
-                    variant: "default", // or "success" if you have that variant
+                    variant: "success",
                 });
             }
 
