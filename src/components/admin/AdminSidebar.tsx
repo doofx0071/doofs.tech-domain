@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
-const adminRoute = import.meta.env.VITE_ADMIN_ROUTE || "/admin";
+const adminRoute = import.meta.env.VITE_ADMIN_ROUTE;
 
 const menuItems = [
   { title: "Overview", url: `${adminRoute}/dashboard`, icon: LayoutDashboard },

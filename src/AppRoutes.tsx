@@ -19,9 +19,9 @@ import Tutorials from "./pages/Tutorials";
 import NotFound from "./pages/NotFound";
 import Health from "./pages/Health";
 
-// Admin route - configurable via environment variable for obscurity
+// Admin route - MUST be configured via VITE_ADMIN_ROUTE environment variable
 // Real security is enforced by AdminRoute component which validates admin role via backend
-const ADMIN_PATH = import.meta.env.VITE_ADMIN_ROUTE || "/admin";
+const ADMIN_PATH = import.meta.env.VITE_ADMIN_ROUTE;
 
 export const AppRoutes = () => {
     return (

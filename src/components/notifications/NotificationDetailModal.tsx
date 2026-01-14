@@ -13,8 +13,8 @@ import { Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 
-// Admin route - configurable via environment variable
-const ADMIN_PATH = import.meta.env.VITE_ADMIN_ROUTE || "/admin";
+// Admin route - MUST be configured via VITE_ADMIN_ROUTE environment variable
+const ADMIN_PATH = import.meta.env.VITE_ADMIN_ROUTE;
 
 interface NotificationDetailModalProps {
     isOpen: boolean;
