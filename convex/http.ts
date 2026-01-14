@@ -59,6 +59,16 @@ http.route({
       const token = formData.get("token") as string;
       const signature = formData.get("signature") as string;
 
+      // Verify Timestamp Freshness (Prevent Replay Attacks)
+      // Allow 5 minutes drift (standard practice)
+      const nowSec = Math.floor(Date.now() / 1000);
+      const timestampSec = parseInt(timestamp, 10);
+      
+      if (isNaN(timestampSec) || Math.abs(nowSec - timestampSec) > 300) {
+        console.error("Webhook timestamp too old or invalid:", timestamp);
+        return new Response("Timestamp out of bounds", { status: 401 });
+      }
+
       // Verify Signature logic
       const encoder = new TextEncoder();
       const key = await crypto.subtle.importKey(

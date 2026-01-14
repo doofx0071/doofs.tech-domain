@@ -1,5 +1,5 @@
 "use node";
-import { action } from "../_generated/server";
+import { internalAction } from "../_generated/server";
 import { v } from "convex/values";
 
 function getEnv(name: string) {
@@ -8,7 +8,7 @@ function getEnv(name: string) {
     return value;
 }
 
-export const upsertRecord = action({
+export const upsertRecord = internalAction({
     args: {
         zoneId: v.optional(v.string()), // Optional override, otherwise use env
         type: v.union(v.literal("A"), v.literal("AAAA"), v.literal("CNAME"), v.literal("TXT"), v.literal("MX")),
@@ -132,7 +132,7 @@ export const upsertRecord = action({
     },
 });
 
-export const deleteRecord = action({
+export const deleteRecord = internalAction({
     args: {
         zoneId: v.optional(v.string()),
         providerRecordId: v.string(),
@@ -164,7 +164,7 @@ export const deleteRecord = action({
     },
 });
 
-export const createZone = action({
+export const createZone = internalAction({
     args: { name: v.string() },
     handler: async (ctx, args) => {
         const token = getEnv("CLOUDFLARE_API_TOKEN");
@@ -234,7 +234,7 @@ export const createZone = action({
     }
 });
 
-export const getZone = action({
+export const getZone = internalAction({
     args: { zoneId: v.string() },
     handler: async (ctx, args) => {
         const token = getEnv("CLOUDFLARE_API_TOKEN");
@@ -258,7 +258,7 @@ export const getZone = action({
 });
 
 // List all DNS records from Cloudflare for a zone
-export const listRecords = action({
+export const listRecords = internalAction({
     args: { zoneId: v.string() },
     handler: async (ctx, args) => {
         const token = getEnv("CLOUDFLARE_API_TOKEN");

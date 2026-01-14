@@ -151,9 +151,17 @@ export const updateStatus = internalMutation({
 export const refreshStatus = action({
     args: { id: v.id("platform_domains"), zoneId: v.string() },
     handler: async (ctx, args) => {
-        // Can be triggered by cron (internal) or user (admin)
-        // If triggered by cron, auth check might be skipped or handled differently.
-        // For simplicity, let's allow it if we have the ID and ZoneID (which implies we read it from DB).
+        // Security: Ensure only admins can trigger refresh
+        // Note: If called by internal cron, we should use a different internalAction
+        // Since this is public 'action', we enforce admin check.
+        const userId = await auth.getUserId(ctx);
+        if (!userId) throw new Error("Unauthorized");
+        
+        // We can't use requireAdmin(ctx) directly in action because it uses ctx.db
+        // So we query internal helper or check via user ID if we trust the token claims (Convex Auth)
+        // Better: Use an internal query to check role
+        const isAdmin = await ctx.runQuery(internal.platformDns.verifyAdminInternal, { userId });
+        if (!isAdmin) throw new Error("Admin access required");
 
         const zone = await ctx.runAction((internal as any).dnsProvider.cloudflare.getZone, {
             zoneId: args.zoneId
