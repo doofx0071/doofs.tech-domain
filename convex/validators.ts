@@ -1,5 +1,8 @@
 const SUBDOMAIN_RE = /^[a-z0-9-]+$/;
+const DNS_NAME_RE = /^[a-z0-9-_.]+$/; // Allow dots for multi-level records (e.g. _foo.bar) and underscores
+
 const RESERVED = new Set([
+
     // System & Auth
     "admin", "administrator", "api", "app", "auth", "beta", "cache", "cdn", "code", "config", "console",
     "dashboard", "data", "database", "db", "dev", "developer", "developers", "docs", "documentation",
@@ -45,7 +48,7 @@ export function validateDnsName(name: string) {
 
     // Otherwise, strict relative name rules
     if (s.length > 63) throw new Error("DNS name segment is too long (max 63 characters).");
-    if (!SUBDOMAIN_RE.test(s)) throw new Error("Invalid DNS name format. Use letters, numbers, and hyphens only.");
+    if (!DNS_NAME_RE.test(s)) throw new Error("Invalid DNS name format. Use letters, numbers, hyphens, underscores, and dots.");
     if (s.startsWith("-") || s.endsWith("-")) throw new Error("DNS name cannot start or end with a hyphen.");
 
     return s;
