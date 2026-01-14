@@ -52,9 +52,10 @@ export const createRecordInternal = internalMutation({
         await checkDnsRecordLimit(ctx, args.domainId);
 
         // Validation
-        const name = validateDnsName(args.name);
+        const name = validateDnsName(args.name, { subdomain: domain.subdomain, rootDomain: domain.rootDomain });
         const content = validateRecordContent(args.type, args.content);
         const fqdn = computeFqdn(name, domain.subdomain, domain.rootDomain);
+
 
         // Enforce Scope strictly
         const apex = `${domain.subdomain}.${domain.rootDomain}`;
@@ -135,9 +136,10 @@ export const updateRecordInternal = internalMutation({
         if (!domain) throw new Error("Domain not found");
 
         // Validation
-        const name = validateDnsName(args.name);
+        const name = validateDnsName(args.name, { subdomain: domain.subdomain, rootDomain: domain.rootDomain });
         const content = validateRecordContent(args.type, args.content);
         const fqdn = computeFqdn(name, domain.subdomain, domain.rootDomain);
+
 
         // Enforce Scope strictly
         const apex = `${domain.subdomain}.${domain.rootDomain}`;

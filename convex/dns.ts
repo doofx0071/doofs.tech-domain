@@ -45,7 +45,8 @@ export const createRecord = mutation({
         // Validation
         // This validation call relies on convex/validators.ts
         // Allowed characters: letters, numbers, hyphens, underscores, dots.
-        const name = validateDnsName(args.name);
+        // Also strips suffix if user pasted full domain
+        const name = validateDnsName(args.name, { subdomain: domain.subdomain, rootDomain: domain.rootDomain });
         const content = validateRecordContent(args.type, args.content);
         const fqdn = computeFqdn(name, domain.subdomain, domain.rootDomain);
 

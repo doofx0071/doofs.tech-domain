@@ -40,8 +40,22 @@ export function validateSubdomainLabel(label: string) {
     return s;
 }
 
-export function validateDnsName(name: string) {
-    const s = name.trim().toLowerCase();
+export function validateDnsName(name: string, context?: { subdomain: string, rootDomain: string }) {
+    let s = name.trim().toLowerCase();
+
+    // Auto-fix: If user pasted full domain (e.g. "www.mysub.doofs.tech") into name, strip the suffix
+    if (context) {
+        const fullSuffix = `.${context.subdomain}.${context.rootDomain}`.toLowerCase();
+        const fullExact = `${context.subdomain}.${context.rootDomain}`.toLowerCase();
+
+        if (s.endsWith(fullSuffix)) {
+            // Strip suffix
+            s = s.slice(0, -fullSuffix.length);
+        } else if (s === fullExact) {
+            // Exact match means root (@)
+            s = "@";
+        }
+    }
 
     // Allow @ as strict exact match
     if (s === "@") return "@";
