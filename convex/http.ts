@@ -421,7 +421,7 @@ http.route({
     }
 
     try {
-      await ctx.runMutation(internal.domainsInternal.removeInternal, {
+      await ctx.runAction(internal.domainsInternal.removeWithCloudflare, {
         domainId: domainId as any,
         userId: key.userId
       });

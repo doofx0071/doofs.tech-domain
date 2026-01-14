@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { internalMutation, internalQuery } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { requireActivePlatformDomain, now, getSettingsOrDefaults } from "./lib";
 import { validateSubdomainLabel } from "./validators";
 
@@ -160,6 +161,59 @@ export const removeInternal = internalMutation({
             details: `Deleted: ${domain.subdomain}.${domain.rootDomain}`,
             timestamp: now(),
             status: "success",
+        });
+    },
+});
+
+// Internal action that handles Cloudflare cleanup before database deletion
+// Used by HTTP API to ensure DNS records are properly removed from Cloudflare
+export const removeWithCloudflare = internalAction({
+    args: {
+        domainId: v.id("domains"),
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        // 1. Get domain with records
+        const domain = await ctx.runQuery(internal.domainsInternal.getDomainWithRecords, {
+            domainId: args.domainId,
+            userId: args.userId,
+        });
+        if (!domain) throw new Error("Domain not found or not authorized");
+
+        // 2. Delete each record from Cloudflare
+        const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+        if (cfToken && domain.zoneId) {
+            for (const record of domain.records) {
+                if (record.providerRecordId) {
+                    try {
+                        const resp = await fetch(
+                            `https://api.cloudflare.com/client/v4/zones/${domain.zoneId}/dns_records/${record.providerRecordId}`,
+                            {
+                                method: "DELETE",
+                                headers: {
+                                    Authorization: `Bearer ${cfToken}`,
+                                    "Content-Type": "application/json",
+                                },
+                            }
+                        );
+                        const data = await resp.json();
+                        if (!data.success) {
+                            const isNotFound = data.errors?.some((e: any) => e.code === 81044 || e.code === 1001);
+                            if (!isNotFound) {
+                                console.warn(`Failed to delete CF record ${record.providerRecordId}:`, data.errors);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn(`Error deleting CF record ${record.providerRecordId}:`, e);
+                    }
+                }
+            }
+        }
+
+        // 3. Delete from database (this also creates audit log)
+        await ctx.runMutation(internal.domainsInternal.removeInternal, {
+            domainId: args.domainId,
+            userId: args.userId,
         });
     },
 });
