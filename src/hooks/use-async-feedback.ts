@@ -3,7 +3,9 @@ import { useToast } from "@/hooks/use-toast";
 import { formatError } from "@/lib/error-handling";
 
 interface AsyncFeedbackOptions {
-    title?: string;
+    title?: string; // @deprecated use successTitle
+    successTitle?: string;
+    errorTitle?: string;
     successMessage?: string;
     loadingMessage?: string;
     onSuccess?: (data: any) => void;
@@ -42,7 +44,7 @@ export function useAsyncFeedback<TArgs, TResult>(
             // Success Handling
             if (options.successMessage) {
                 toast({
-                    title: options.title || "Success",
+                    title: options.successTitle || options.title || "Success",
                     description: options.successMessage,
                     variant: "success",
                 });
@@ -58,7 +60,7 @@ export function useAsyncFeedback<TArgs, TResult>(
             const formattedMessage = formatError(error);
             
             toast({
-                title: options.title || "Error",
+                title: options.errorTitle || "Error",
                 description: formattedMessage,
                 variant: "destructive",
             });

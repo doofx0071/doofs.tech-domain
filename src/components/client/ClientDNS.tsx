@@ -118,7 +118,7 @@ export function ClientDNS() {
   // --- Handlers using useAsyncFeedback ---
 
   const { execute: createRecord, isLoading: createLoading } = useAsyncFeedback(createRecordMutation, {
-    title: "Record Created",
+    successTitle: "Record Created",
     successMessage: "Your new DNS record has been added. Propagation may take a few minutes.",
     onSuccess: () => {
       setIsAddOpen(false);
@@ -127,7 +127,7 @@ export function ClientDNS() {
   });
 
   const { execute: updateRecord, isLoading: updateLoading } = useAsyncFeedback(updateRecordMutation, {
-    title: "Record Updated",
+    successTitle: "Record Updated",
     successMessage: "Your changes are syncing to Cloudflare.",
     onSuccess: () => {
       setIsEditOpen(false);
@@ -137,7 +137,7 @@ export function ClientDNS() {
   });
 
   const { execute: deleteRecord } = useAsyncFeedback(deleteRecordMutation, {
-    title: "Record Deleted",
+    successTitle: "Record Deleted",
     successMessage: "The DNS record has been queued for deletion.",
     onSuccess: () => setDeleteId(null)
   });

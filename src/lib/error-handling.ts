@@ -9,7 +9,8 @@
 const PREFIX_PATTERNS = [
     /^Uncaught Error:\s*/,
     /^Error:\s*/,
-    /^\[.*?\]\s*/, // Removes things like "[CONVEX ...]"
+    /^\[.*?\]\s*/, // Removes things like "[CONVEX ...]" or "[Request ID: ...]"
+    /^Server Error Called by client\s*/,
 ];
 
 const TECHNICAL_JUNK = [
@@ -52,6 +53,11 @@ export function formatError(error: any): string {
     // 3. Clean up generic Convex "Uncaught Error" leftovers
     if (message.includes("Uncaught Error")) {
         message = message.replace("Uncaught Error", "").trim();
+    }
+    
+    // Clean up "Server Error Called by client" if it appears in the middle
+    if (message.includes("Server Error Called by client")) {
+        message = message.replace("Server Error Called by client", "").trim();
     }
     
     // 4. Handle specific cloudflare JSON errors that might leak
