@@ -118,6 +118,8 @@ const USER_SPECIFIC_QUERIES = [
     /dns:deleteRecord/i,
     /apiKeys:/i,
     /users:me/i,
+    /users:currentUser/i,
+    /admin:/i,  // All admin queries require authentication
 ];
 
 /**
@@ -130,8 +132,15 @@ export function isSessionError(error: Error | string | null | undefined): boolea
     // Check explicit session patterns
     if (SESSION_ERROR_PATTERNS.some(p => p.test(message))) return true;
     
-    // Heuristic: generic "Server Error Called by client" on user-specific queries
+    // Heuristic: generic "Server Error Called by client" or "Server Error" on Convex queries
     if (message.includes("Server Error Called by client") || message.includes("Server Error")) {
+        // If message contains a Convex query/mutation/action pattern, treat as session error
+        // Pattern: [CONVEX Q(...)] or [CONVEX M(...)] or [CONVEX A(...)]
+        if (/\[CONVEX [QMA]\(/.test(message)) {
+            return true;
+        }
+        
+        // Also check our known user-specific query patterns
         if (USER_SPECIFIC_QUERIES.some(p => p.test(message))) return true;
     }
     

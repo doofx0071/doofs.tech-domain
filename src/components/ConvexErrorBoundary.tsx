@@ -4,6 +4,9 @@ import { LogOut, RefreshCcw, AlertTriangle } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { isSessionError, isSuspendedError } from "@/lib/error-handling";
 
+// Admin route from environment variable
+const ADMIN_PATH = import.meta.env.VITE_ADMIN_ROUTE;
+
 interface Props {
   children: ReactNode;
 }
@@ -17,9 +20,17 @@ interface State {
 const ErrorBoundaryContent = ({ error, reset }: { error: Error, reset: () => void }) => {
   const { signOut } = useAuthActions();
 
+  // Detect if we're on an admin route
+  const isAdminRoute = ADMIN_PATH && window.location.pathname.startsWith(ADMIN_PATH);
+
   const handleLogout = async () => {
     await signOut();
-    window.location.href = "/login";
+    // Redirect to admin login if on admin route, otherwise regular login
+    if (isAdminRoute && ADMIN_PATH) {
+      window.location.href = ADMIN_PATH;
+    } else {
+      window.location.href = "/login";
+    }
   };
 
   // Use centralized error detection functions
