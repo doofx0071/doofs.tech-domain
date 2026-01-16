@@ -48,6 +48,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Trash2, Plus, Pencil, Globe, RefreshCw } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
+import { formatError } from "@/lib/error-handling";
 
 interface PlatformDnsRecordsProps {
     platformDomainId: any;
@@ -92,7 +93,7 @@ export function PlatformDnsRecords({ platformDomainId, domain, isOpen, onClose }
             const result = await listRecords({ platformDomainId });
             setRecords(result);
         } catch (error: any) {
-            toast({ title: "Error", description: error.message, variant: "destructive" });
+            toast({ title: "Error", description: formatError(error), variant: "destructive" });
             setRecords([]);
         } finally {
             setIsLoading(false);
@@ -132,7 +133,7 @@ export function PlatformDnsRecords({ platformDomainId, domain, isOpen, onClose }
             // Refresh after a short delay to allow Cloudflare propagation
             setTimeout(() => fetchRecords(), 2000);
         } catch (error: any) {
-            toast({ title: "Error", description: error.message, variant: "destructive" });
+            toast({ title: "Error", description: formatError(error), variant: "destructive" });
         } finally {
             setIsCreating(false);
         }
@@ -165,7 +166,7 @@ export function PlatformDnsRecords({ platformDomainId, domain, isOpen, onClose }
             setEditingRecord(null);
             resetForm();
         } catch (error: any) {
-            toast({ title: "Error", description: error.message, variant: "destructive" });
+            toast({ title: "Error", description: formatError(error), variant: "destructive" });
         } finally {
             setEditLoading(false);
         }
@@ -183,7 +184,7 @@ export function PlatformDnsRecords({ platformDomainId, domain, isOpen, onClose }
             // Refresh records list
             fetchRecords();
         } catch (error: any) {
-            toast({ title: "Error", description: error.message, variant: "destructive" });
+            toast({ title: "Error", description: formatError(error), variant: "destructive" });
         }
     };
 

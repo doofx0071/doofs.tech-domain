@@ -48,7 +48,7 @@ export function AdminMessages() {
                 setSelectedMessage(current => current ? { ...current, status } : null);
             }
         } catch (error) {
-            toast({ title: "Failed to update status", variant: "destructive" });
+            toast({ title: "Error", description: "Failed to update status.", variant: "destructive" });
         }
     };
 
@@ -59,7 +59,7 @@ export function AdminMessages() {
             toast({ title: "Message deleted" });
             if (selectedMessage?._id === id) setIsDetailsOpen(false);
         } catch (error) {
-            toast({ title: "Failed to delete", variant: "destructive" });
+            toast({ title: "Error", description: "Failed to delete message.", variant: "destructive" });
         }
     };
 

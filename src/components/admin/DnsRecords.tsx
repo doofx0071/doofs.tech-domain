@@ -40,6 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Trash2, Plus, Globe } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
+import { formatError } from "@/lib/error-handling";
 
 interface DnsRecordsProps {
     domainId: any; // ID<"domains">
@@ -84,7 +85,7 @@ export function DnsRecords({ domainId, subdomain, rootDomain, isOpen, onClose }:
         } catch (error: any) {
             toast({
                 title: "Error",
-                description: error.message,
+                description: formatError(error),
                 variant: "destructive",
             });
         } finally {
@@ -104,7 +105,7 @@ export function DnsRecords({ domainId, subdomain, rootDomain, isOpen, onClose }:
         } catch (error: any) {
             toast({
                 title: "Error",
-                description: error.message,
+                description: formatError(error),
                 variant: "destructive",
             });
         }

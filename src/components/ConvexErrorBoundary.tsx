@@ -1,7 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, RefreshCcw } from "lucide-react";
+import { LogOut, RefreshCcw, AlertTriangle } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { isSessionError, isSuspendedError } from "@/lib/error-handling";
 
 interface Props {
   children: ReactNode;
@@ -21,25 +22,61 @@ const ErrorBoundaryContent = ({ error, reset }: { error: Error, reset: () => voi
     window.location.href = "/login";
   };
 
-  const isSessionError = error.message.includes("Session expired") || error.message.includes("suspended");
+  // Use centralized error detection functions
+  const isSession = isSessionError(error);
+  const isSuspended = isSuspendedError(error);
+  const isAuthRelated = isSession || isSuspended;
+
+  // Determine UI content based on error type
+  const getErrorContent = () => {
+    if (isSuspended) {
+      return {
+        title: "Account Suspended",
+        message: "Your account has been suspended. Please contact support for assistance.",
+        icon: <AlertTriangle className="h-6 w-6 text-orange-600" />,
+        iconBg: "bg-orange-100",
+        buttonText: "Sign Out",
+        buttonIcon: <LogOut className="h-4 w-4" />,
+      };
+    }
+    if (isSession) {
+      return {
+        title: "Session Expired",
+        message: "Your session has expired. Please sign in again to continue.",
+        icon: <LogOut className="h-6 w-6 text-red-600" />,
+        iconBg: "bg-red-100",
+        buttonText: "Sign In Again",
+        buttonIcon: <LogOut className="h-4 w-4" />,
+      };
+    }
+    return {
+      title: "Something went wrong",
+      message: "An unexpected error occurred. Please try again.",
+      icon: <RefreshCcw className="h-6 w-6 text-red-600" />,
+      iconBg: "bg-red-100",
+      buttonText: "Try Again",
+      buttonIcon: <RefreshCcw className="h-4 w-4" />,
+    };
+  };
+
+  const content = getErrorContent();
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 text-center">
       <div className="max-w-md space-y-6 rounded-lg border bg-white p-8 shadow-lg">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-          <LogOut className="h-6 w-6 text-red-600" />
+        <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${content.iconBg}`}>
+          {content.icon}
         </div>
         
         <div className="space-y-2">
           <h2 className="text-xl font-bold text-gray-900">
-            {isSessionError ? "Session Expired" : "Something went wrong"}
+            {content.title}
           </h2>
           <p className="text-sm text-gray-500">
-            {isSessionError 
-              ? "Your security session has timed out. Please sign in again to continue." 
-              : "An unexpected error occurred. Please try again."}
+            {content.message}
           </p>
-          {!isSessionError && (
+          {/* Only show technical details for non-auth errors */}
+          {!isAuthRelated && (
             <p className="text-xs font-mono text-gray-400 bg-gray-100 p-2 rounded overflow-auto">
               {error.message}
             </p>
@@ -47,15 +84,15 @@ const ErrorBoundaryContent = ({ error, reset }: { error: Error, reset: () => voi
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-          {isSessionError ? (
+          {isAuthRelated ? (
             <Button onClick={handleLogout} className="w-full gap-2">
-              <LogOut className="h-4 w-4" />
-              Sign In Again
+              {content.buttonIcon}
+              {content.buttonText}
             </Button>
           ) : (
             <Button onClick={reset} className="w-full gap-2">
-              <RefreshCcw className="h-4 w-4" />
-              Try Again
+              {content.buttonIcon}
+              {content.buttonText}
             </Button>
           )}
         </div>
@@ -75,9 +112,9 @@ export class ConvexErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // We can ignore specific noisy errors if needed
-    if (error.message.includes("Session expired") || error.message.includes("suspended")) {
-      console.warn("Caught session error:", error);
+    // Use centralized error detection for logging
+    if (isSessionError(error) || isSuspendedError(error)) {
+      console.warn("Caught auth-related error:", error);
     } else {
       console.error("Uncaught error:", error, errorInfo);
     }

@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAsyncFeedback } from "@/hooks/use-async-feedback";
+import { formatError } from "@/lib/error-handling";
 import {
   Dialog,
   DialogContent,
@@ -96,7 +97,7 @@ export function ClientDomains() {
       toast({ title: "Exported", description: `Zone file for ${domainName} downloaded.`, variant: "success" });
     } catch (e: any) {
       // Manual formatting since we aren't using the hook here (it's a one-off query)
-      toast({ title: "Export Failed", description: e.message, variant: "destructive" });
+      toast({ title: "Error", description: formatError(e), variant: "destructive" });
     }
   };
 

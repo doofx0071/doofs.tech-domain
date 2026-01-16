@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { formatError } from "@/lib/error-handling";
+import { formatError, isSessionError, isSuspendedError } from "@/lib/error-handling";
 
 interface AsyncFeedbackOptions {
     title?: string; // @deprecated use successTitle
@@ -56,7 +56,40 @@ export function useAsyncFeedback<TArgs, TResult>(
             
             return result;
         } catch (error: any) {
-            // Error Handling
+            // Special handling for session expiration - auto redirect to login
+            if (isSessionError(error)) {
+                toast({
+                    title: "Session Expired",
+                    description: "Your session has expired. Redirecting to login...",
+                    variant: "destructive",
+                });
+                
+                // Auto-redirect to login after brief delay
+                setTimeout(() => {
+                    window.location.href = "/login";
+                }, 1500);
+                
+                if (options.onError) {
+                    options.onError(error);
+                }
+                return null;
+            }
+            
+            // Special handling for suspended accounts
+            if (isSuspendedError(error)) {
+                toast({
+                    title: "Account Suspended",
+                    description: "Your account has been suspended. Please contact support.",
+                    variant: "destructive",
+                });
+                
+                if (options.onError) {
+                    options.onError(error);
+                }
+                return null;
+            }
+            
+            // Generic error handling
             const formattedMessage = formatError(error);
             
             toast({

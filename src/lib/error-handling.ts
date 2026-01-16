@@ -85,3 +85,72 @@ export function formatError(error: any): string {
 
     return message.trim();
 }
+
+// ============================================
+// AUTH / SESSION ERROR DETECTION
+// ============================================
+
+const SESSION_ERROR_PATTERNS = [
+    /session expired/i,
+    /must be logged in/i,
+    /must be authenticated/i,
+    /not authenticated/i,
+    /\bunauthenticated\b/i,
+    /please log in again/i,
+    /please sign in/i,
+    /login required/i,
+];
+
+const SUSPENDED_ERROR_PATTERNS = [
+    /account has been suspended/i,
+    /account has been banned/i,
+    /\bsuspended\b/i,
+    /\bbanned\b/i,
+];
+
+// User-specific queries that require authentication
+const USER_SPECIFIC_QUERIES = [
+    /domains:listMine/i,
+    /profile:/i,
+    /dns:listRecords/i,
+    /dns:createRecord/i,
+    /dns:updateRecord/i,
+    /dns:deleteRecord/i,
+    /apiKeys:/i,
+    /users:me/i,
+];
+
+/**
+ * Detects if an error is related to session expiration or missing authentication.
+ */
+export function isSessionError(error: Error | string | null | undefined): boolean {
+    if (!error) return false;
+    const message = typeof error === "string" ? error : error.message;
+    
+    // Check explicit session patterns
+    if (SESSION_ERROR_PATTERNS.some(p => p.test(message))) return true;
+    
+    // Heuristic: generic "Server Error Called by client" on user-specific queries
+    if (message.includes("Server Error Called by client") || message.includes("Server Error")) {
+        if (USER_SPECIFIC_QUERIES.some(p => p.test(message))) return true;
+    }
+    
+    return false;
+}
+
+/**
+ * Detects if an error is related to a suspended or banned account.
+ */
+export function isSuspendedError(error: Error | string | null | undefined): boolean {
+    if (!error) return false;
+    const message = typeof error === "string" ? error : error.message;
+    return SUSPENDED_ERROR_PATTERNS.some(p => p.test(message));
+}
+
+/**
+ * Detects if an error is any auth-related error that requires user to re-authenticate.
+ * Combines session expiration and account suspension detection.
+ */
+export function isAuthError(error: Error | string | null | undefined): boolean {
+    return isSessionError(error) || isSuspendedError(error);
+}

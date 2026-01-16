@@ -9,6 +9,7 @@ import { useQuery, useMutation, usePaginatedQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { formatError } from "@/lib/error-handling";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -130,7 +131,7 @@ export function AdminUsers() {
       }
       closeAction();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: formatError(error), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -145,7 +146,7 @@ export function AdminUsers() {
       setIsEditingReason(false);
       setViewUser({ ...viewUser, statusReason: editReason });
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: formatError(error), variant: "destructive" });
     } finally {
       setEditLoading(false);
     }
