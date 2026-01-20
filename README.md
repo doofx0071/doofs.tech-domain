@@ -1,59 +1,199 @@
-# doofs.tech Domain Project
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/doofs.tech-darkmode-logo.png" />
+    <source media="(prefers-color-scheme: light)" srcset="public/doofs.tech-lightmode-logo.png" />
+    <img src="public/doofs.tech-lightmode-logo.png" alt="doofs.tech Logo" height="80" />
+  </picture>
+</p>
 
-## How can I edit this code?
+<p align="center">
+  <img src="public/og.png" alt="doofs.tech | Domains" width="600" />
+</p>
 
-There are several ways of editing your application.
+<h1 align="center">🇵🇭 doofs.tech | Domains</h1>
 
-**Use your preferred IDE**
+<p align="center">
+  <strong>Free subdomains for Filipino developers and beyond.</strong>
+</p>
 
-You can work locally using your own IDE. Simply clone this repo and push changes.
+<p align="center">
+  <a href="https://domain.doofs.tech">
+    <img src="https://img.shields.io/badge/Live-domain.doofs.tech-0038A8?style=for-the-badge" alt="Live Site" />
+  </a>
+  <img src="https://img.shields.io/badge/Made%20in-Philippines%20🇵🇭-CE1126?style=for-the-badge" alt="Made in Philippines" />
+</p>
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## ✨ Features
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+| Feature | Description |
+|---------|-------------|
+| 🌐 **Free Subdomains** | Claim your unique subdomain from any available platform domain |
+| 🎯 **Multiple Domains** | Choose from a variety of platform domains to suit your project |
+| ⚡ **DNS Management** | Full control over A, AAAA, CNAME, TXT, and MX records |
+| 🔒 **Secure Auth** | GitHub OAuth with Cloudflare Turnstile protection |
+| 📧 **Email Forwarding** | Built-in email forwarding via Mailgun integration |
+| 🛠️ **Developer API** | Programmatic access via REST API with API key authentication |
+| 📊 **Dashboard** | User-friendly dashboard to manage your domains and DNS records |
+| 🔔 **Notifications** | Real-time notifications for domain and DNS changes |
+| 📝 **Audit Logs** | Track all changes made to your account and domains |
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🛠️ Tech Stack
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+<p align="center">
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Convex-FF6F00?style=for-the-badge" alt="Convex" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/shadcn/ui-000000?style=for-the-badge&logo=shadcnui&logoColor=white" alt="shadcn/ui" />
+  <img src="https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare" />
+  <img src="https://img.shields.io/badge/Mailgun-F06B66?style=for-the-badge&logo=mailgun&logoColor=white" alt="Mailgun" />
+</p>
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🏗️ Architecture
 
-**Use GitHub Codespaces**
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Frontend** | React + Vite | SPA with server-side rendering support |
+| **Backend** | Convex | Real-time database, queries, mutations, and actions |
+| **DNS Provider** | Cloudflare API | DNS record management and propagation |
+| **Email** | Mailgun | Transactional emails and forwarding |
+| **Auth** | Convex Auth + GitHub OAuth | Secure user authentication |
+| **Hosting** | Vercel | Frontend deployment and edge functions |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 💡 Why use doofs.tech | Domains?
 
-## What technologies are used for this project?
+| Problem | Solution |
+|---------|----------|
+| 🚫 Custom domains are expensive | ✅ Get a **free subdomain** instantly |
+| 🕐 DNS setup is complicated | ✅ Simple dashboard to manage DNS records |
+| 🔧 No coding knowledge? | ✅ Point-and-click interface, no terminal needed |
+| 🏗️ Building multiple projects? | ✅ Claim subdomains for each project easily |
+| 🇵🇭 Supporting local? | ✅ Made by Filipino developers, for everyone |
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🔄 How It Works
 
-## How can I deploy this project?
+<table>
+<tr>
+<td align="center" width="20%">
 
-You can deploy this project using your preferred hosting platform or CI/CD pipeline.
+### 1️⃣
+**Sign In**
 
-## Connecting a custom domain
+Login with GitHub
 
-To connect a custom domain, configure your domain's DNS records to point to your hosting provider.
+</td>
+<td align="center" width="5%">➡️</td>
+<td align="center" width="20%">
+
+### 2️⃣
+**Choose Domain**
+
+Pick from available domains
+
+</td>
+<td align="center" width="5%">➡️</td>
+<td align="center" width="20%">
+
+### 3️⃣
+**Claim Subdomain**
+
+Get `yourname.domain`
+
+</td>
+<td align="center" width="5%">➡️</td>
+<td align="center" width="20%">
+
+### 4️⃣
+**Configure DNS**
+
+Add your records
+
+</td>
+<td align="center" width="5%">➡️</td>
+<td align="center" width="20%">
+
+### 5️⃣
+**Go Live! 🎉**
+
+Your site is ready
+
+</td>
+</tr>
+</table>
+
+---
+
+## 📖 How to Use
+
+<details>
+<summary><strong>🔐 Step 1: Create an Account</strong></summary>
+
+> Sign in using your **GitHub account** at [domain.doofs.tech](https://domain.doofs.tech).  
+> We use GitHub OAuth for secure, passwordless authentication.
+
+</details>
+
+<details>
+<summary><strong>🌐 Step 2: Claim Your Subdomain</strong></summary>
+
+> 1. Browse available platform domains  
+> 2. Enter your desired subdomain name  
+> 3. Click **Claim** — it's yours instantly!
+
+</details>
+
+<details>
+<summary><strong>⚙️ Step 3: Configure DNS Records</strong></summary>
+
+> From your dashboard, add any of these record types:
+>
+> | Type | Purpose | Example |
+> |:----:|---------|---------|
+> | `A` | Point to IPv4 | `192.168.1.1` |
+> | `AAAA` | Point to IPv6 | `2001:db8::1` |
+> | `CNAME` | Alias to domain | `myapp.vercel.app` |
+> | `TXT` | Verification | `google-site-verification=...` |
+> | `MX` | Email routing | `mail.example.com` |
+
+</details>
+
+<details>
+<summary><strong>🛠️ Step 4: Use the API (Optional)</strong></summary>
+
+> Generate an API key from your dashboard to automate DNS management:
+> ```bash
+> curl -X POST https://domain.doofs.tech/api/dns \
+>   -H "X-API-Key: your-api-key" \
+>   -d '{"type": "A", "name": "@", "content": "1.2.3.4"}'
+> ```
+
+</details>
+
+---
+
+## 🔗 Links
+
+- **Live Site**: [domain.doofs.tech](https://domain.doofs.tech)
+- **Docs**: [domain.doofs.tech/docs](https://domain.doofs.tech/docs)
+- **API Docs**: [domain.doofs.tech/api](https://domain.doofs.tech/api)
+- **Tutorials**: [domain.doofs.tech/tutorials](https://domain.doofs.tech/tutorials)
+
+
+---
+
+<p align="center">
+  Made with ❤️ in the <strong>Philippines</strong> 🇵🇭
+</p>
+
+<p align="center">
+  <sub>© 2026 doofs.tech. All rights reserved.</sub>
+</p>
