@@ -83,48 +83,53 @@
 
 <table>
 <tr>
-<td align="center" width="20%">
+<td align="center" width="18%">
 
-### 1️⃣
+<h3>🔑</h3>
+
 **Sign In**
 
 Login with GitHub
 
 </td>
-<td align="center" width="5%">➡️</td>
-<td align="center" width="20%">
+<td align="center" width="4%">→</td>
+<td align="center" width="18%">
 
-### 2️⃣
-**Choose Domain**
+<h3>🎯</h3>
 
-Pick from available domains
+**Pick Domain**
+
+Browse available options
 
 </td>
-<td align="center" width="5%">➡️</td>
-<td align="center" width="20%">
+<td align="center" width="4%">→</td>
+<td align="center" width="18%">
 
-### 3️⃣
+<h3>✍️</h3>
+
 **Claim Subdomain**
 
-Get `yourname.domain`
+Reserve your name
 
 </td>
-<td align="center" width="5%">➡️</td>
-<td align="center" width="20%">
+<td align="center" width="4%">→</td>
+<td align="center" width="18%">
 
-### 4️⃣
+<h3>⚙️</h3>
+
 **Configure DNS**
 
-Add your records
+Point to your server
 
 </td>
-<td align="center" width="5%">➡️</td>
-<td align="center" width="20%">
+<td align="center" width="4%">→</td>
+<td align="center" width="18%">
 
-### 5️⃣
-**Go Live! 🎉**
+<h3>🚀</h3>
 
-Your site is ready
+**Go Live!**
+
+Your site is online
 
 </td>
 </tr>
