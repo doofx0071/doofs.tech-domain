@@ -104,6 +104,22 @@ export const cancelTransfer = mutation({
 
         const domain = await ctx.db.get(transfer.domainId);
 
+        // Notify Recipient if they exist
+        const recipient = await ctx.db
+            .query("users")
+            .withIndex("email", (q) => q.eq("email", transfer.toEmail))
+            .first();
+
+        if (recipient) {
+            await ctx.scheduler.runAfter(0, internal.notifications.createInternal, {
+                userId: recipient._id,
+                type: "warning",
+                title: "Transfer Cancelled",
+                message: `The transfer of ${domain?.subdomain}.${domain?.rootDomain} has been cancelled by the sender.`,
+                domainId: transfer.domainId,
+            });
+        }
+
         // Audit Log
         await ctx.db.insert("auditLogs", {
             userId,
@@ -241,8 +257,7 @@ export const getTransferInfo = query({
         const transfer = await ctx.db
             .query("domain_transfers")
             .withIndex("by_code", (q) => q.eq("transferCode", args.transferCode))
-            .filter((q) => q.eq(q.field("status"), "pending"))
-            .first();
+            .first(); // Allow fetching non-pending for status check
 
         if (!transfer) return null;
 
@@ -252,7 +267,8 @@ export const getTransferInfo = query({
             toEmail: transfer.toEmail,
             domainName: domain ? `${domain.subdomain}.${domain.rootDomain}` : "Unknown Domain",
             expiresAt: transfer.expiresAt,
-            isValid: transfer.expiresAt > now(),
+            isValid: transfer.status === "pending" && transfer.expiresAt > now(),
+            status: transfer.status, // Return status for UI handling
         };
     }
 });

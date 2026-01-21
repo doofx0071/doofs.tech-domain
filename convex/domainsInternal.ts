@@ -179,6 +179,16 @@ export const removeInternal = internalMutation({
         if (!domain) throw new Error("Domain not found");
         if (domain.userId !== args.userId) throw new Error("Not authorized");
 
+        // Delete all pending/expired transfers for this domain
+        const transfers = await ctx.db
+            .query("domain_transfers")
+            .withIndex("by_domain", (q) => q.eq("domainId", args.domainId))
+            .collect();
+
+        for (const t of transfers) {
+            await ctx.db.delete(t._id);
+        }
+
         // Delete all DNS records for this domain
         const records = await ctx.db
             .query("dns_records")

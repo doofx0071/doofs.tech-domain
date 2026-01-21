@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Github } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import logoLight from "@/assets/doofs-logo-light.svg";
@@ -13,14 +13,17 @@ export const Login = () => {
   const { theme } = useTheme();
   const { signIn } = useAuthActions();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useConvexAuth();
 
-  // Redirect to dashboard if already authenticated
+  // Redirect to dashboard or return URL if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/dashboard");
+      const from = (location.state as any)?.from;
+      const target = from ? `${from.pathname}${from.search}` : "/dashboard";
+      navigate(target, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location]);
 
   /* New Popup Logic */
   const [isLoading, setIsLoading] = useState(false);
