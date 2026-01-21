@@ -39,6 +39,17 @@ export const checkAdmin = internalQuery({
     }
 });
 
+// Internal query to get platform domain by domain name (for DNS jobs)
+export const getByDomainInternal = internalQuery({
+    args: { domain: v.string() },
+    handler: async (ctx, args) => {
+        return await ctx.db
+            .query("platform_domains")
+            .withIndex("by_domain", (q) => q.eq("domain", args.domain))
+            .first();
+    }
+});
+
 export const createDb = internalMutation({
     args: {
         domain: v.string(),
@@ -156,7 +167,7 @@ export const refreshStatus = action({
         // Since this is public 'action', we enforce admin check.
         const userId = await auth.getUserId(ctx);
         if (!userId) throw new Error("Unauthorized");
-        
+
         // We can't use requireAdmin(ctx) directly in action because it uses ctx.db
         // So we query internal helper or check via user ID if we trust the token claims (Convex Auth)
         // Better: Use an internal query to check role
@@ -174,6 +185,59 @@ export const refreshStatus = action({
         });
 
         return { success: true, status: zone.status };
+    },
+});
+
+// Check SSL status for platform domain (zone-level)
+export const checkSSL = internalAction({
+    args: { id: v.id("platform_domains") },
+    handler: async (ctx, args): Promise<{ sslStatus: string; expiresAt: number | null; error?: string }> => {
+        const domain: any = await ctx.runQuery(internal.platformDomains.getByIdInternal, { id: args.id });
+        if (!domain || !domain.zoneId) {
+            return { sslStatus: "none", expiresAt: null, error: "No zone configured" };
+        }
+
+        // Check SSL via Cloudflare
+        const result: any = await ctx.runAction(internal.dnsProvider.cloudflare.getSSLStatus, {
+            zoneId: domain.zoneId,
+        });
+
+        // Update SSL status in DB
+        await ctx.runMutation(internal.platformDomains.updateSSL, {
+            id: args.id,
+            sslStatus: result.status,
+            sslExpiresAt: result.expiresAt,
+        });
+
+        return { sslStatus: result.status, expiresAt: result.expiresAt };
+    },
+});
+
+export const getByIdInternal = internalQuery({
+    args: { id: v.id("platform_domains") },
+    handler: async (ctx, args) => {
+        return await ctx.db.get(args.id);
+    },
+});
+
+export const updateSSL = internalMutation({
+    args: {
+        id: v.id("platform_domains"),
+        sslStatus: v.union(
+            v.literal("active"),
+            v.literal("pending_validation"),
+            v.literal("initializing"),
+            v.literal("none")
+        ),
+        sslExpiresAt: v.optional(v.union(v.number(), v.null())),
+    },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.id, {
+            sslStatus: args.sslStatus,
+            sslCheckedAt: now(),
+            sslExpiresAt: args.sslExpiresAt ?? undefined,
+            updatedAt: now(),
+        });
     },
 });
 

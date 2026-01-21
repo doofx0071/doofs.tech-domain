@@ -306,3 +306,119 @@ export const listRecords = internalAction({
         }));
     }
 });
+
+// Lookup TXT records using Cloudflare DNS-over-HTTPS (for domain verification)
+export const lookupTXTRecord = internalAction({
+    args: { hostname: v.string() },
+    handler: async (ctx, args) => {
+        try {
+            const response = await fetch(
+                `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(args.hostname)}&type=TXT`,
+                {
+                    headers: {
+                        "Accept": "application/dns-json",
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                return { found: false, records: [], error: "DNS query failed" };
+            }
+
+            const data = await response.json();
+
+            // Extract TXT records from answer section
+            const txtRecords: string[] = [];
+            if (data.Answer) {
+                for (const answer of data.Answer) {
+                    if (answer.type === 16) { // TXT record type
+                        // Remove surrounding quotes from TXT record data
+                        const txtData = answer.data?.replace(/^"|"$/g, "") || "";
+                        txtRecords.push(txtData);
+                    }
+                }
+            }
+
+            return {
+                found: txtRecords.length > 0,
+                records: txtRecords,
+                error: null
+            };
+        } catch (e: any) {
+            return {
+                found: false,
+                records: [],
+                error: e.message || "DNS lookup failed"
+            };
+        }
+    }
+});
+
+// Check SSL certificate status for a zone using Certificate Packs API
+export const getSSLStatus = internalAction({
+    args: { zoneId: v.string() },
+    handler: async (ctx, args) => {
+        const token = getEnv("CLOUDFLARE_API_TOKEN");
+
+        try {
+            console.log("[getSSLStatus] Checking SSL for zone:", args.zoneId);
+            const response = await fetch(
+                `https://api.cloudflare.com/client/v4/zones/${args.zoneId}/ssl/certificate_packs`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            const data = await response.json();
+            console.log("[getSSLStatus] API Response success:", data.success);
+            console.log("[getSSLStatus] Result count:", data.result?.length || 0);
+
+            if (!data.success) {
+                console.error("[getSSLStatus] API Error:", data.errors);
+                return {
+                    status: "none" as const,
+                    expiresAt: null,
+                    error: data.errors?.[0]?.message || "Failed to check SSL status"
+                };
+            }
+
+            // Find Universal SSL or first active certificate pack
+            const packs = data.result || [];
+            console.log("[getSSLStatus] Certificate packs:", packs.map((p: any) => ({ type: p.type, status: p.status })));
+
+            const universalPack = packs.find((p: any) => p.type === "universal");
+            const activePack = packs.find((p: any) => p.status === "active") || universalPack;
+
+            console.log("[getSSLStatus] Universal pack found:", !!universalPack);
+            console.log("[getSSLStatus] Active pack found:", !!activePack);
+            console.log("[getSSLStatus] Active pack status:", activePack?.status);
+
+            if (activePack && activePack.status === "active") {
+                const expiresOn = activePack.certificates?.[0]?.expires_on;
+                console.log("[getSSLStatus] SSL is ACTIVE, expires:", expiresOn);
+                return {
+                    status: "active" as const,
+                    expiresAt: expiresOn ? new Date(expiresOn).getTime() : null,
+                    error: null
+                };
+            } else if (activePack && activePack.status === "pending_validation") {
+                console.log("[getSSLStatus] SSL is PENDING_VALIDATION");
+                return { status: "pending_validation" as const, expiresAt: null, error: null };
+            } else if (packs.length > 0) {
+                console.log("[getSSLStatus] SSL is INITIALIZING");
+                return { status: "initializing" as const, expiresAt: null, error: null };
+            }
+
+            console.log("[getSSLStatus] No SSL packs found, returning NONE");
+            return { status: "none" as const, expiresAt: null, error: null };
+        } catch (e: any) {
+            console.error("[getSSLStatus] Exception:", e);
+            return { status: "none" as const, expiresAt: null, error: e.message || "SSL check failed" };
+        }
+    }
+});
+
+

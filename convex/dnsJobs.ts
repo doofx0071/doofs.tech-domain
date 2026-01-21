@@ -76,7 +76,16 @@ export const processDue = internalAction({
                     return;
                 }
 
+                // Lookup the correct zoneId for this root domain
+                const platformDomain = await ctx.runQuery(internal.platformDomains.getByDomainInternal, { domain: record.rootDomain });
+                const zoneId = platformDomain?.zoneId;
+                if (!zoneId) {
+                    await ctx.runMutation(internal.dnsJobs.completeJob, { jobId: job._id, status: "failed", error: `No zone ID found for domain: ${record.rootDomain}` });
+                    return;
+                }
+
                 const result = await ctx.runAction((internal as any).dnsProvider.cloudflare.upsertRecord, {
+                    zoneId,
                     type: record.type,
                     name: record.fqdn,
                     content: record.content,
@@ -96,7 +105,12 @@ export const processDue = internalAction({
                 const record = await ctx.runQuery(internal.dnsJobs.getRecordForJob, { recordId: job.recordId });
 
                 if (record && record.providerRecordId) {
+                    // Lookup the correct zoneId for this root domain
+                    const platformDomain = await ctx.runQuery(internal.platformDomains.getByDomainInternal, { domain: record.rootDomain });
+                    const zoneId = platformDomain?.zoneId;
+
                     await ctx.runAction((internal as any).dnsProvider.cloudflare.deleteRecord, {
+                        zoneId,
                         providerRecordId: record.providerRecordId
                     });
                 }

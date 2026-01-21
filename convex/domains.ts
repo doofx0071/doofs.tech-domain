@@ -53,7 +53,23 @@ export const listMine = query({
             .order("desc")
             .collect();
 
-        return applySearch(items, args.search, ["subdomain", "rootDomain", "ownerEmail"]);
+        // Enrich with platform domain SSL status (zone-level)
+        const enrichedItems = await Promise.all(items.map(async (domain) => {
+            const platformDomain = await ctx.db
+                .query("platform_domains")
+                .withIndex("by_domain", (q) => q.eq("domain", domain.rootDomain))
+                .first();
+
+            const status = platformDomain?.sslStatus || "none";
+
+            return {
+                ...domain,
+                sslStatus: status === "pending_validation" ? "pending" : status,
+                sslExpiresAt: platformDomain?.sslExpiresAt,
+            };
+        }));
+
+        return applySearch(enrichedItems, args.search, ["subdomain", "rootDomain", "ownerEmail"]);
     },
 });
 
@@ -93,6 +109,93 @@ export const claim = action({
         }
 
         return result;
+    },
+});
+
+// Verify domain ownership by checking TXT record
+export const verifyDomain = action({
+    args: { domainId: v.id("domains") },
+    handler: async (ctx, args): Promise<{ success: boolean; message: string }> => {
+        const userId = await auth.getUserId(ctx);
+        if (!userId) throw new Error("Unauthenticated");
+
+        // Get domain
+        const domain = await ctx.runQuery(internal.domainsInternal.getInternal, {
+            domainId: args.domainId,
+            userId,
+        });
+
+        if (!domain) throw new Error("Domain not found or not authorized");
+        if (domain.status === "active") {
+            return { success: true, message: "Domain already verified" };
+        }
+        if (!domain.verificationCode) {
+            throw new Error("No verification code found for this domain");
+        }
+
+        // Lookup TXT record at _doofs-verify.subdomain.rootDomain
+        const verificationHostname = `_doofs-verify.${domain.subdomain}.${domain.rootDomain}`;
+        const dnsResult = await ctx.runAction(internal.dnsProvider.cloudflare.lookupTXTRecord, {
+            hostname: verificationHostname,
+        });
+
+        // Check if any TXT record matches the verification code
+        const codeMatch = dnsResult.records.some(
+            (record: string) => record === domain.verificationCode
+        );
+
+        if (!codeMatch) {
+            return {
+                success: false,
+                message: `TXT record not found. Add: ${verificationHostname} TXT "${domain.verificationCode}"`,
+            };
+        }
+
+        // Verification successful - activate domain
+        await ctx.runMutation(internal.domainsInternal.activateDomain, {
+            domainId: args.domainId,
+        });
+
+        return { success: true, message: "Domain verified successfully!" };
+    },
+});
+
+// Check SSL status for a domain (updates zone status)
+export const checkSSLStatus = action({
+    args: { domainId: v.id("domains") },
+    handler: async (ctx, args): Promise<{ sslStatus: string; message: string }> => {
+        const userId = await auth.getUserId(ctx);
+        if (!userId) throw new Error("Unauthenticated");
+
+        // Get domain
+        const domain = await ctx.runQuery(internal.domainsInternal.getInternal, {
+            domainId: args.domainId,
+            userId,
+        });
+
+        if (!domain) throw new Error("Domain not found or not authorized");
+
+        // Get platform domain
+        const platformDomains = await ctx.runQuery(api.platformDomains.listPublic, {});
+        const platformDomain = platformDomains.find((pd: any) => pd.domain === domain.rootDomain);
+
+        if (!platformDomain?.zoneId) {
+            return { sslStatus: "none", message: "No zone configured" };
+        }
+
+        // Trigger zone-level SSL check
+        const result = await ctx.runAction(internal.platformDomains.checkSSL, {
+            id: platformDomain._id,
+        });
+
+        // Map pending_validation to pending for frontend compatibility if needed, 
+        // or just pass through. Frontend expects "pending" or "active".
+        const status = result.sslStatus === "pending_validation" ? "pending" : result.sslStatus;
+
+        return {
+            sslStatus: status,
+            message: status === "active" ? "SSL is active" : `SSL status: ${status}`
+        };
     },
 });
 

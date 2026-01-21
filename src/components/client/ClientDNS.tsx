@@ -7,7 +7,8 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { api } from "../../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAsyncFeedback } from "@/hooks/use-async-feedback";
 import {
   Accordion,
@@ -62,18 +63,18 @@ interface GroupedRecords {
 export function ClientDNS() {
   const records = useQuery(api.dns.listAllMyRecords, {});
   const domains = useQuery(api.domains.listMine, {});
-  
+
   // Mutations wrapped in feedback hook
   const createRecordMutation = useMutation(api.dns.createRecord);
   const deleteRecordMutation = useMutation(api.dns.deleteRecord);
   const updateRecordMutation = useMutation(api.dns.updateRecord);
   const verifyPropagationAction = useAction(api.dns.verifyPropagation);
-  
+
   const { toast } = useToast();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  
+
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -85,6 +86,23 @@ export function ClientDNS() {
   const [content, setContent] = useState("");
   const [priority, setPriority] = useState("");
   const [ttl, setTtl] = useState("");
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Handle prefill from navigation state (from verification flow)
+  useEffect(() => {
+    const state = location.state as { prefillRecord?: { domainId: string; type: string; name: string; content: string } } | null;
+    if (state?.prefillRecord && domains) {
+      setSelectedDomain(state.prefillRecord.domainId);
+      setType(state.prefillRecord.type as any);
+      setName(state.prefillRecord.name);
+      setContent(state.prefillRecord.content);
+      setIsAddOpen(true);
+      // Clear the state to prevent re-triggering on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, domains, navigate, location.pathname]);
 
   // Group records by domain
   const groupedRecords = useMemo((): GroupedRecords[] => {
@@ -145,35 +163,35 @@ export function ClientDNS() {
   const { execute: verifyPropagation } = useAsyncFeedback(verifyPropagationAction, {
     // Custom handling for verification so we don't show generic success
     onError: () => {
-        // Error toast already handled by hook
+      // Error toast already handled by hook
     }
   });
 
   const handleNameBlur = () => {
     // If the user pastes the full domain, strip it for them in the UI so they see what happened
     if (!selectedDomain || !name) return;
-    
+
     // Find the current domain object
     const domain = domains?.find((d: any) => d._id === selectedDomain);
     if (!domain) return;
 
     const suffix = `.${domain.subdomain}.${domain.rootDomain}`.toLowerCase();
     const fullExact = `${domain.subdomain}.${domain.rootDomain}`.toLowerCase();
-    
+
     const n = name.trim().toLowerCase();
 
     if (n.endsWith(suffix)) {
       const relative = n.slice(0, -suffix.length);
       setName(relative || "@");
-      toast({ 
-        title: "Auto-formatted Name", 
+      toast({
+        title: "Auto-formatted Name",
         description: "We stripped the domain suffix for you. Use relative names only.",
         variant: "info"
       });
     } else if (n === fullExact) {
       setName("@");
-      toast({ 
-        title: "Auto-formatted Name", 
+      toast({
+        title: "Auto-formatted Name",
         description: "Replaced full domain with @ (root).",
         variant: "info"
       });
@@ -182,7 +200,7 @@ export function ClientDNS() {
 
   const handleCreate = async () => {
     if (!selectedDomain || !name || !content) return;
-    
+
     await createRecord({
       domainId: selectedDomain as any,
       type,
@@ -213,25 +231,25 @@ export function ClientDNS() {
 
   const handleVerify = async (record: any) => {
     toast({ title: "Verifying propagation...", description: "Checking Cloudflare Public DNS..." });
-    
+
     // We call execute() but handle the result manually because the "success" 
     // depends on the boolean inside the result, not just the API call succeeding.
     const result = await verifyPropagation({ recordId: record._id });
-    
+
     if (result) {
-        if (result.propagated) {
-          toast({
-            title: "Record Propagated",
-            description: "Record is visible on public DNS.",
-            variant: "success"
-          });
-        } else {
-          toast({
-            title: "Not yet propagated",
-            description: "Cloudflare DoH does not see this value yet. Please wait a moment.",
-            variant: "warning"
-          });
-        }
+      if (result.propagated) {
+        toast({
+          title: "Record Propagated",
+          description: "Record is visible on public DNS.",
+          variant: "success"
+        });
+      } else {
+        toast({
+          title: "Not yet propagated",
+          description: "Cloudflare DoH does not see this value yet. Please wait a moment.",
+          variant: "warning"
+        });
+      }
     }
   };
 
@@ -311,7 +329,7 @@ export function ClientDNS() {
 
       {/* Accordion for each domain */}
       {groupedRecords.length > 0 && (
-        <Accordion type="multiple" defaultValue={groupedRecords.map(g => g.domainId)} className="space-y-3">
+        <Accordion type="multiple" defaultValue={[]} className="space-y-3">
           {groupedRecords.map((group) => (
             <AccordionItem
               key={group.domainId}

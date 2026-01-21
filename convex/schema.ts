@@ -103,8 +103,18 @@ const schema = defineSchema({
     zoneId: v.optional(v.string()),
     nameservers: v.optional(v.array(v.string())),
     cloudflareStatus: v.optional(v.string()), // active, pending, moved, etc.
-    updatedAt: v.optional(v.number()),
 
+    // SSL Status (zone-level, applies to all subdomains)
+    sslStatus: v.optional(v.union(
+      v.literal("active"),
+      v.literal("pending_validation"),
+      v.literal("initializing"),
+      v.literal("none")
+    )),
+    sslCheckedAt: v.optional(v.number()),
+    sslExpiresAt: v.optional(v.number()),
+
+    updatedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_domain", ["domain"]),
@@ -115,7 +125,22 @@ const schema = defineSchema({
     rootDomain: v.string(), // "norlaxx.com"
     userId: v.optional(v.id("users")),
     ownerEmail: v.optional(v.string()),
-    status: v.union(v.literal("active"), v.literal("inactive")),
+    status: v.union(
+      v.literal("active"),
+      v.literal("inactive"),
+      v.literal("pending_verification")
+    ),
+    // Verification fields
+    verificationCode: v.optional(v.string()),
+    verifiedAt: v.optional(v.number()),
+    // SSL status fields
+    sslStatus: v.optional(v.union(
+      v.literal("active"),
+      v.literal("pending"),
+      v.literal("initializing"),
+      v.literal("none")
+    )),
+    sslCheckedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

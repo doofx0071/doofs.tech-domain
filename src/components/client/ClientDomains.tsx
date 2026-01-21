@@ -2,11 +2,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Edit, Loader2, Globe, Download } from "lucide-react";
+import { Plus, Trash2, Edit, Loader2, Globe, Download, CheckCircle, Copy, AlertCircle, Lock, ShieldOff, RefreshCw } from "lucide-react";
 import { useQuery, useMutation, useAction, useConvex } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAsyncFeedback } from "@/hooks/use-async-feedback";
@@ -45,19 +45,63 @@ import { Turnstile } from '@marsidev/react-turnstile';
 export function ClientDomains() {
   const domains = useQuery(api.domains.listMine, {});
   const platformDomains = useQuery(api.platformDomains.list, { search: "" });
-  
+
   const claimDomainAction = useAction(api.domains.claim);
   const deleteDomainAction = useAction(api.domains.remove);
-  
+  const verifyDomainAction = useAction(api.domains.verifyDomain);
+  const checkSSLAction = useAction(api.domains.checkSSLStatus);
+
   const { toast } = useToast();
 
   const [isClaimOpen, setIsClaimOpen] = useState(false);
   const [subdomain, setSubdomain] = useState("");
   const [selectedRoot, setSelectedRoot] = useState("");
-  
+  const [checkingSSL, setCheckingSSL] = useState<string | null>(null);
+
+  const handleCheckSSL = async (domainId: any) => {
+    setCheckingSSL(domainId);
+    try {
+      const result = await checkSSLAction({ domainId });
+      toast({
+        title: "SSL Status Checked",
+        description: result.message,
+        variant: result.sslStatus === "active" ? "default" : "default" // "info" equivalent
+      });
+    } catch (error: any) {
+      toast({
+        title: "Check Failed",
+        description: error.message || "Could not check SSL status",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingSSL(null);
+    }
+  };
+
+  const navigate = useNavigate();
+
+  // Navigate to DNS page with prefilled verification record
+  const handleProceedToAddRecord = () => {
+    if (!verifyDomain) return;
+
+    navigate('/dashboard/dns', {
+      state: {
+        prefillRecord: {
+          domainId: verifyDomain._id,
+          type: 'TXT',
+          name: '_doofs-verify',
+          content: verifyDomain.verificationCode
+        }
+      }
+    });
+    setVerifyDomain(null);
+  };
+
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteSubdomain, setDeleteSubdomain] = useState("");
   const [token, setToken] = useState("");
+  const [verifyDomain, setVerifyDomain] = useState<any>(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
   const convex = useConvex();
 
   // --- Handlers using useAsyncFeedback ---
@@ -66,10 +110,10 @@ export function ClientDomains() {
     successTitle: "Domain Claimed!",
     successMessage: `${subdomain}.${selectedRoot || "doofs.tech"} is now yours.`,
     onSuccess: () => {
-        setIsClaimOpen(false);
-        setSubdomain("");
-        setToken("");
-        localStorage.removeItem("claim_pending");
+      setIsClaimOpen(false);
+      setSubdomain("");
+      setToken("");
+      localStorage.removeItem("claim_pending");
     }
   });
 
@@ -135,7 +179,27 @@ export function ClientDomains() {
     await claimDomain({ subdomain, rootDomain: root, token });
   };
 
+  const handleVerify = async (domainId: string) => {
+    setVerifyLoading(true);
+    try {
+      const result = await verifyDomainAction({ domainId: domainId as any });
+      if (result.success) {
+        toast({ title: "Verified!", description: result.message, variant: "success" });
+        setVerifyDomain(null);
+      } else {
+        toast({ title: "Verification Failed", description: result.message, variant: "destructive" });
+      }
+    } catch (e: any) {
+      toast({ title: "Error", description: formatError(e), variant: "destructive" });
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copied!", description: "Copied to clipboard" });
+  };
   return (
     <div className="space-y-6">
       <div>
@@ -227,6 +291,7 @@ export function ClientDomains() {
                 <TableRow>
                   <TableHead>Domain</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">SSL</TableHead>
                   <TableHead className="hidden sm:table-cell">Created</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
@@ -234,7 +299,7 @@ export function ClientDomains() {
               <TableBody>
                 {!domains ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-12">
+                    <TableCell colSpan={5} className="text-center py-12">
                       <LoadingSpinner />
                     </TableCell>
                   </TableRow>
@@ -245,9 +310,43 @@ export function ClientDomains() {
                     <TableRow key={domain._id}>
                       <TableCell className="font-medium">{domain.subdomain}.{domain.rootDomain}</TableCell>
                       <TableCell>
-                        <Badge variant={domain.status === "active" ? "default" : "secondary"}>
-                          {domain.status}
+                        <Badge
+                          variant={domain.status === "active" ? "default" : domain.status === "pending_verification" ? "outline" : "secondary"}
+                          className={domain.status === "pending_verification" ? "border-yellow-500 text-yellow-600" : ""}
+                        >
+                          {domain.status === "pending_verification" ? "Pending" : domain.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {domain.status === "active" && (
+                          <div
+                            className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => handleCheckSSL(domain._id)}
+                            title="Click to refresh SSL status"
+                          >
+                            {checkingSSL === domain._id ? (
+                              <Badge variant="outline" className="border-blue-400 text-blue-500">
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                Checking...
+                              </Badge>
+                            ) : domain.sslStatus === "active" ? (
+                              <Badge variant="outline" className="border-green-500 text-green-600">
+                                <Lock className="h-3 w-3 mr-1" />
+                                Secure
+                              </Badge>
+                            ) : domain.sslStatus === "pending" ? (
+                              <Badge variant="outline" className="border-yellow-500 text-yellow-600">
+                                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                Pending
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="border-gray-400 text-gray-500">
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Check
+                              </Badge>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">{new Date(domain.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
@@ -272,6 +371,17 @@ export function ClientDomains() {
                           >
                             <Download className="h-4 w-4" />
                           </Button>
+                          {domain.status === "pending_verification" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                              onClick={() => setVerifyDomain(domain)}
+                            >
+                              <AlertCircle className="h-4 w-4 mr-1" />
+                              Verify
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -306,6 +416,78 @@ export function ClientDomains() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Verification Modal */}
+      <Dialog open={!!verifyDomain} onOpenChange={(open) => !open && setVerifyDomain(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              Verify Domain Ownership
+            </DialogTitle>
+            <DialogDescription>
+              Add a TXT record to verify you own <strong>{verifyDomain?.subdomain}.{verifyDomain?.rootDomain}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>TXT Record Name</Label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 p-2 bg-muted rounded text-sm break-all">
+                  _doofs-verify.{verifyDomain?.subdomain}.{verifyDomain?.rootDomain}
+                </code>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => copyToClipboard(`_doofs-verify.${verifyDomain?.subdomain}.${verifyDomain?.rootDomain}`)}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>TXT Record Value</Label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 p-2 bg-muted rounded text-sm break-all">
+                  {verifyDomain?.verificationCode}
+                </code>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => copyToClipboard(verifyDomain?.verificationCode || "")}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Add this TXT record to your DNS provider. It may take a few minutes to propagate.
+            </p>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              onClick={handleProceedToAddRecord}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add TXT Record
+            </Button>
+            <Button
+              onClick={() => handleVerify(verifyDomain?._id)}
+              disabled={verifyLoading}
+              className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+            >
+              {verifyLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Check Verification
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

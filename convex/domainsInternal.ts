@@ -104,7 +104,8 @@ export const claimInternal = internalMutation({
             rootDomain,
             userId: args.userId,
             ownerEmail: undefined,
-            status: "active",
+            status: "pending_verification",
+            verificationCode: `doofs-verify=${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`,
             createdAt: now(),
             updatedAt: now(),
         });
@@ -117,7 +118,54 @@ export const claimInternal = internalMutation({
             status: "success",
         });
 
-        return domainId;
+        const domain = await ctx.db.get(domainId);
+        return { domainId, verificationCode: domain?.verificationCode };
+    },
+});
+
+// Activate domain after successful verification
+export const activateDomain = internalMutation({
+    args: { domainId: v.id("domains") },
+    handler: async (ctx, args) => {
+        const domain = await ctx.db.get(args.domainId);
+        if (!domain) throw new Error("Domain not found");
+
+        await ctx.db.patch(args.domainId, {
+            status: "active",
+            verifiedAt: now(),
+            updatedAt: now(),
+        });
+
+        // Audit log
+        if (domain.userId) {
+            await ctx.db.insert("auditLogs", {
+                userId: domain.userId,
+                action: "domain_verified",
+                details: `Verified: ${domain.subdomain}.${domain.rootDomain}`,
+                timestamp: now(),
+                status: "success",
+            });
+        }
+    },
+});
+
+// Update SSL status for a domain
+export const updateSSLStatus = internalMutation({
+    args: {
+        domainId: v.id("domains"),
+        sslStatus: v.union(
+            v.literal("active"),
+            v.literal("pending"),
+            v.literal("initializing"),
+            v.literal("none")
+        ),
+    },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.domainId, {
+            sslStatus: args.sslStatus,
+            sslCheckedAt: now(),
+            updatedAt: now(),
+        });
     },
 });
 
