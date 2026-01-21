@@ -304,6 +304,29 @@ const schema = defineSchema({
     .index("by_user", ["userId"])
     .index("by_timestamp", ["timestamp"])
     .index("by_user_timestamp", ["userId", "timestamp"]),
+
+  // Domain Transfers (Subdomain ownership transfer)
+  domain_transfers: defineTable({
+    domainId: v.id("domains"),
+    fromUserId: v.id("users"),
+    toEmail: v.string(), // Recipient email
+    toUserId: v.optional(v.id("users")), // Set when recipient claims
+    transferCode: v.string(), // Unique 8-char code
+    status: v.union(
+      v.literal("pending"), // Awaiting recipient
+      v.literal("accepted"), // Completed
+      v.literal("cancelled"), // Sender cancelled
+      v.literal("expired") // 24h passed
+    ),
+    expiresAt: v.number(), // 24 hours from creation
+    createdAt: v.number(),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_code", ["transferCode"]) // For lookup during claim
+    .index("by_from_user", ["fromUserId"]) // For sender history
+    .index("by_to_email", ["toEmail"]) // For recipient history
+    .index("by_domain", ["domainId"]) // To prevent concurrent transfers
+    .index("by_status", ["status"]),
 });
 
 export default schema;

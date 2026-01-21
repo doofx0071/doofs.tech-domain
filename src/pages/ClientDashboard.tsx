@@ -4,6 +4,7 @@ import { ClientOverview } from "@/components/client/ClientOverview";
 import { ClientDomains } from "@/components/client/ClientDomains";
 import { ClientDNS } from "@/components/client/ClientDNS";
 import { ClientSettings } from "@/components/client/ClientSettings";
+
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/sections/Footer";
 import { LayoutDashboard, Globe, Activity, Settings } from "lucide-react";
@@ -127,6 +128,7 @@ const ClientDashboard = () => {
           <Route index element={<ClientOverview />} />
           <Route path="domains" element={<ClientDomains />} />
           <Route path="dns" element={<ClientDNS />} />
+          <Route path="settings" element={<ClientSettings />} />
           <Route path="settings" element={<ClientSettings />} />
         </Routes>
       </main>

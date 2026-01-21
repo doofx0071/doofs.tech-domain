@@ -2,11 +2,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Edit, Loader2, Globe, Download, CheckCircle, Copy, AlertCircle, Lock, ShieldOff, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Edit, Loader2, Globe, Download, CheckCircle, Copy, AlertCircle, Lock, ShieldOff, RefreshCw, ArrowRightLeft } from "lucide-react";
 import { useQuery, useMutation, useAction, useConvex } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAsyncFeedback } from "@/hooks/use-async-feedback";
@@ -20,6 +20,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,10 +56,46 @@ export function ClientDomains() {
   const deleteDomainAction = useAction(api.domains.remove);
   const verifyDomainAction = useAction(api.domains.verifyDomain);
   const checkSSLAction = useAction(api.domains.checkSSLStatus);
+  const initiateTransferAction = useMutation(api.transfers.initiateTransfer);
+  const cancelTransferAction = useMutation(api.transfers.cancelTransfer);
+
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { toast } = useToast();
 
   const [isClaimOpen, setIsClaimOpen] = useState(false);
+  const [isAcceptOpen, setIsAcceptOpen] = useState(false);
+  const [acceptCode, setAcceptCode] = useState("");
+
+  useEffect(() => {
+    const code = searchParams.get("transferCode");
+    if (code) {
+      setAcceptCode(code);
+      setIsAcceptOpen(true);
+      // Clean up URL
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("transferCode");
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const claimTransferAction = useMutation(api.transfers.claimTransfer);
+  const { execute: claimTransfer, isLoading: claimTransferLoading } = useAsyncFeedback(claimTransferAction, {
+    successTitle: "Transfer Complete!",
+    successMessage: "You are now the owner of this domain.",
+    onSuccess: () => {
+      setIsAcceptOpen(false);
+      setAcceptCode("");
+    },
+    onError: (error) => {
+      // keep modal open on error
+    }
+  });
+
+  const handleAcceptTransfer = () => {
+    if (!acceptCode || acceptCode.length !== 8) return;
+    claimTransfer({ transferCode: acceptCode });
+  };
   const [subdomain, setSubdomain] = useState("");
   const [selectedRoot, setSelectedRoot] = useState("");
   const [checkingSSL, setCheckingSSL] = useState<string | null>(null);
@@ -102,6 +144,15 @@ export function ClientDomains() {
   const [token, setToken] = useState("");
   const [verifyDomain, setVerifyDomain] = useState<any>(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
+
+  // Transfer State
+  const [transferDomain, setTransferDomain] = useState<any>(null);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [transferResult, setTransferResult] = useState<any>(null);
+
+  const existingTransfer = useQuery(api.transfers.getPendingForDomain, transferDomain ? { domainId: transferDomain._id } : "skip");
+  const activeTransfer = transferResult || existingTransfer;
+
   const convex = useConvex();
 
   // --- Handlers using useAsyncFeedback ---
@@ -122,6 +173,35 @@ export function ClientDomains() {
     successMessage: "Domain and all DNS records have been removed.",
     onSuccess: () => setDeleteId(null)
   });
+
+  const { execute: initiateTransfer, isLoading: transferLoading } = useAsyncFeedback(initiateTransferAction, {
+    successTitle: "Transfer Initiated",
+    successMessage: "Transfer code generated. Share it with the recipient.",
+    onSuccess: (data) => {
+      setTransferResult(data);
+    }
+  });
+
+  const handleInitiateTransfer = async () => {
+    if (!transferDomain || !recipientEmail) return;
+    await initiateTransfer({
+      domainId: transferDomain._id,
+      toEmail: recipientEmail
+    });
+  };
+
+  const { execute: cancelTransfer, isLoading: cancelLoading } = useAsyncFeedback(cancelTransferAction, {
+    successTitle: "Transfer Cancelled",
+    successMessage: "The pending transfer has been revoked.",
+    onSuccess: () => {
+      setTransferResult(null);
+    }
+  });
+
+  const handleCancelTransfer = async () => {
+    if (!activeTransfer) return;
+    await cancelTransfer({ transferId: activeTransfer._id || activeTransfer.transferId });
+  };
 
   // Export is a query call, not a mutation/action hook, so we wrap it manually or just use try/catch with formatError
   // But wait, useAsyncFeedback expects an async function. We can pass an inline async function.
@@ -215,183 +295,230 @@ export function ClientDomains() {
               <CardDescription className="hidden sm:block">All your registered domains</CardDescription>
             </div>
 
-            <Dialog open={isClaimOpen} onOpenChange={setIsClaimOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-9" data-tour="add-domain-button">
-                  <Plus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Claim New Domain</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Claim a Subdomain</DialogTitle>
-                  <DialogDescription>
-                    Choose a platform domain and claim your unique subdomain.
-                  </DialogDescription>
-                </DialogHeader>
+            <div className="flex items-center gap-2">
+              <Dialog open={isClaimOpen} onOpenChange={setIsClaimOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="h-9" data-tour="add-domain-button">
+                    <Plus className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Claim New Domain</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Claim a Subdomain</DialogTitle>
+                    <DialogDescription>
+                      Choose a platform domain and claim your unique subdomain.
+                    </DialogDescription>
+                  </DialogHeader>
 
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Subdomain</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        placeholder="my-project"
-                        value={subdomain}
-                        onChange={(e) => setSubdomain(e.target.value.toLowerCase())}
-                        className="text-right"
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Subdomain</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="my-project"
+                          value={subdomain}
+                          onChange={(e) => setSubdomain(e.target.value.toLowerCase())}
+                          className="text-right"
+                        />
+                        <span className="text-muted-foreground">.</span>
+                        {platformDomains ? (
+                          <Select
+                            value={selectedRoot || (platformDomains[0]?.domain || "")}
+                            onValueChange={setSelectedRoot}
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue placeholder="Select domain" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {platformDomains
+                                .filter((pd: any) => pd.isActive)
+                                .map((pd: any) => (
+                                  <SelectItem key={pd._id} value={pd.domain}>
+                                    {pd.domain}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="w-[180px] h-10 bg-muted animate-pulse rounded-md" />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-center pt-2">
+                      <Turnstile
+                        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || ""}
+                        onSuccess={(token) => setToken(token)}
                       />
-                      <span className="text-muted-foreground">.</span>
-                      {platformDomains ? (
-                        <Select
-                          value={selectedRoot || (platformDomains[0]?.domain || "")}
-                          onValueChange={setSelectedRoot}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select domain" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {platformDomains
-                              .filter((pd: any) => pd.isActive)
-                              .map((pd: any) => (
-                                <SelectItem key={pd._id} value={pd.domain}>
-                                  {pd.domain}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="w-[180px] h-10 bg-muted animate-pulse rounded-md" />
-                      )}
                     </div>
                   </div>
 
-                  <div className="flex justify-center pt-2">
-                    <Turnstile
-                      siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || ""}
-                      onSuccess={(token) => setToken(token)}
-                    />
-                  </div>
-                </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsClaimOpen(false)}>Cancel</Button>
+                    <Button onClick={handleClaim} disabled={claimLoading || !subdomain || !platformDomains?.length || !token}>
+                      {claimLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Claim Domain
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsClaimOpen(false)}>Cancel</Button>
-                  <Button onClick={handleClaim} disabled={claimLoading || !subdomain || !platformDomains?.length || !token}>
-                    {claimLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Claim Domain
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 hidden md:flex"
+                onClick={() => setIsAcceptOpen(true)}
+              >
+                <ArrowRightLeft className="h-4 w-4 mr-2" />
+                Accept Transfer
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Domain</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">SSL</TableHead>
-                  <TableHead className="hidden sm:table-cell">Created</TableHead>
-                  <TableHead className="w-24">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {!domains ? (
+          <TooltipProvider>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12">
-                      <LoadingSpinner />
-                    </TableCell>
+                    <TableHead>Domain</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden md:table-cell">SSL</TableHead>
+                    <TableHead className="hidden sm:table-cell">Created</TableHead>
+                    <TableHead className="w-24">Actions</TableHead>
                   </TableRow>
-                ) : domains.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No domains found.</TableCell></TableRow>
-                ) : (
-                  domains.map((domain: any) => (
-                    <TableRow key={domain._id}>
-                      <TableCell className="font-medium">{domain.subdomain}.{domain.rootDomain}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={domain.status === "active" ? "default" : domain.status === "pending_verification" ? "outline" : "secondary"}
-                          className={domain.status === "pending_verification" ? "border-yellow-500 text-yellow-600" : ""}
-                        >
-                          {domain.status === "pending_verification" ? "Pending" : domain.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {domain.status === "active" && (
-                          <div
-                            className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => handleCheckSSL(domain._id)}
-                            title="Click to refresh SSL status"
-                          >
-                            {checkingSSL === domain._id ? (
-                              <Badge variant="outline" className="border-blue-400 text-blue-500">
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                Checking...
-                              </Badge>
-                            ) : domain.sslStatus === "active" ? (
-                              <Badge variant="outline" className="border-green-500 text-green-600">
-                                <Lock className="h-3 w-3 mr-1" />
-                                Secure
-                              </Badge>
-                            ) : domain.sslStatus === "pending" ? (
-                              <Badge variant="outline" className="border-yellow-500 text-yellow-600">
-                                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                                Pending
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="border-gray-400 text-gray-500">
-                                <RefreshCw className="h-3 w-3 mr-1" />
-                                Check
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">{new Date(domain.createdAt).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            data-tour="delete-domain-btn"
-                            onClick={() => {
-                              setDeleteId(domain._id);
-                              setDeleteSubdomain(domain.subdomain);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleExport(domain._id, `${domain.subdomain}.${domain.rootDomain}`)}
-                            title="Export Zone File"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          {domain.status === "pending_verification" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
-                              onClick={() => setVerifyDomain(domain)}
-                            >
-                              <AlertCircle className="h-4 w-4 mr-1" />
-                              Verify
-                            </Button>
-                          )}
-                        </div>
+                </TableHeader>
+                <TableBody>
+                  {!domains ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-12">
+                        <LoadingSpinner />
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  ) : domains.length === 0 ? (
+                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No domains found.</TableCell></TableRow>
+                  ) : (
+                    domains.map((domain: any) => (
+                      <TableRow key={domain._id}>
+                        <TableCell className="font-medium">{domain.subdomain}.{domain.rootDomain}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={domain.status === "active" ? "default" : domain.status === "pending_verification" ? "outline" : "secondary"}
+                            className={domain.status === "pending_verification" ? "border-yellow-500 text-yellow-600" : ""}
+                          >
+                            {domain.status === "pending_verification" ? "Pending" : domain.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {domain.status === "active" && (
+                            <div
+                              className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => handleCheckSSL(domain._id)}
+                              title="Click to refresh SSL status"
+                            >
+                              {checkingSSL === domain._id ? (
+                                <Badge variant="outline" className="border-blue-400 text-blue-500">
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Checking...
+                                </Badge>
+                              ) : domain.sslStatus === "active" ? (
+                                <Badge variant="outline" className="border-green-500 text-green-600">
+                                  <Lock className="h-3 w-3 mr-1" />
+                                  Secure
+                                </Badge>
+                              ) : domain.sslStatus === "pending" ? (
+                                <Badge variant="outline" className="border-yellow-500 text-yellow-600">
+                                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                  Pending
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="border-gray-400 text-gray-500">
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Check
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">{new Date(domain.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive"
+                                  data-tour="delete-domain-btn"
+                                  onClick={() => {
+                                    setDeleteId(domain._id);
+                                    setDeleteSubdomain(domain.subdomain);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete Domain</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleExport(domain._id, `${domain.subdomain}.${domain.rootDomain}`)}
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Export Zone File</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setTransferDomain(domain);
+                                    setRecipientEmail("");
+                                    setTransferResult(null);
+                                  }}
+                                >
+                                  <ArrowRightLeft className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Transfer Ownership</TooltipContent>
+                            </Tooltip>
+
+                            {domain.status === "pending_verification" && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                                    onClick={() => setVerifyDomain(domain)}
+                                  >
+                                    <AlertCircle className="h-4 w-4 mr-1" />
+                                    Verify
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Verify Ownership</TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TooltipProvider>
         </CardContent>
-      </Card>
+      </Card >
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
@@ -488,6 +615,141 @@ export function ClientDomains() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {/* Transfer Modal */}
+      <Dialog open={!!transferDomain} onOpenChange={(open) => !open && setTransferDomain(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transfer Domain Ownership</DialogTitle>
+            <DialogDescription>
+              Transfer <strong>{transferDomain?.subdomain}.{transferDomain?.rootDomain}</strong> to another user.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!activeTransfer ? (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Recipient Email</Label>
+                <Input
+                  placeholder="recipient@example.com"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  The recipient will receive a notification (if registered) and needs the transfer code to claim the domain.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                <h4 className="font-semibold text-green-800 mb-1">Transfer Pending</h4>
+                <p className="text-sm text-green-700">
+                  Transfer initiated to <strong>{activeTransfer.toEmail}</strong>.
+                  Share the code below. Expires in 24 hours.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Transfer Code</Label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 p-3 bg-muted rounded text-lg font-mono text-center tracking-widest border">
+                    {activeTransfer.transferCode}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => copyToClipboard(activeTransfer.transferCode)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Claim Link</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    readOnly
+                    value={`${window.location.origin}/dashboard/domains?transferCode=${activeTransfer.transferCode}`}
+                    className="text-xs text-muted-foreground"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => copyToClipboard(`${window.location.origin}/dashboard/domains?transferCode=${activeTransfer.transferCode}`)}
+                    title="Copy Link"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            {!activeTransfer ? (
+              <>
+                <Button variant="outline" onClick={() => setTransferDomain(null)}>Close</Button>
+                <Button
+                  onClick={handleInitiateTransfer}
+                  disabled={transferLoading || !recipientEmail || !recipientEmail.includes('@')}
+                >
+                  {transferLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Generate Code
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="destructive"
+                  onClick={handleCancelTransfer}
+                  disabled={cancelLoading}
+                  className="w-full sm:w-auto mr-auto"
+                >
+                  {cancelLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Cancel Transfer
+                </Button>
+                <Button variant="outline" onClick={() => setTransferDomain(null)}>Close</Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Accept Transfer Modal */}
+      <Dialog open={isAcceptOpen} onOpenChange={setIsAcceptOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Accept Domain Transfer</DialogTitle>
+            <DialogDescription>
+              Enter the transfer code to claim ownership of a domain.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Transfer Code</Label>
+              <Input
+                value={acceptCode}
+                onChange={(e) => setAcceptCode(e.target.value.toUpperCase())}
+                placeholder="Enter 8-character code"
+                maxLength={8}
+                className="font-mono text-center tracking-widest text-lg uppercase"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAcceptOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleAcceptTransfer}
+              disabled={claimTransferLoading || !acceptCode || acceptCode.length !== 8}
+            >
+              {claimTransferLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Claim Domain
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div >
   );
 }

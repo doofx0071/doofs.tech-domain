@@ -13,7 +13,6 @@ import type * as apiKeys from "../apiKeys.js";
 import type * as auditLogs from "../auditLogs.js";
 import type * as auth from "../auth.js";
 import type * as contact from "../contact.js";
-import type * as crons from "../crons.js";
 import type * as dns from "../dns.js";
 import type * as dnsInternal from "../dnsInternal.js";
 import type * as dnsJobs from "../dnsJobs.js";
@@ -36,6 +35,7 @@ import type * as ratelimit from "../ratelimit.js";
 import type * as settings from "../settings.js";
 import type * as status from "../status.js";
 import type * as storage from "../storage.js";
+import type * as transfers from "../transfers.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
 
@@ -51,7 +51,6 @@ declare const fullApi: ApiFromModules<{
   auditLogs: typeof auditLogs;
   auth: typeof auth;
   contact: typeof contact;
-  crons: typeof crons;
   dns: typeof dns;
   dnsInternal: typeof dnsInternal;
   dnsJobs: typeof dnsJobs;
@@ -74,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   settings: typeof settings;
   status: typeof status;
   storage: typeof storage;
+  transfers: typeof transfers;
   users: typeof users;
   validators: typeof validators;
 }>;

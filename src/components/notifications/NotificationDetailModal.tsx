@@ -58,7 +58,10 @@ export function NotificationDetailModal({ isOpen, onClose, notification }: Notif
             return `${ADMIN_PATH}/dashboard/domains`;
         }
 
-        // For clients, redirect to DNS page
+        // For clients, if a specific link is provided, use it
+        if (notification.link) return notification.link;
+
+        // Default redirect to DNS page
         return "/dashboard/dns";
     };
 

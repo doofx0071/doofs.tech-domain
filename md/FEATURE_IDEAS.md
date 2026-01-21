@@ -36,7 +36,7 @@ A living document of feature ideas for doofs.tech | Domains.
 - [ ] **Domain Analytics** - Show DNS query stats if Cloudflare Analytics API is available
 - [ ] **Two-Factor Authentication (2FA)** - Add TOTP-based 2FA for account security
 - [ ] **Team/Organization Support** - Allow multiple users to manage same domains
-- [ ] **Domain Transfer** - Transfer subdomain ownership to another user
+- [x] **Domain Transfer** - Transfer subdomain ownership to another user 
 
 ---
 

@@ -15,17 +15,17 @@ import { requireAdmin, requireUserId } from "./lib";
  */
 function isEmailAllowedAsAdmin(email: string | undefined): boolean {
   const allowedEmails = process.env.ALLOWED_ADMIN_EMAILS;
-  
+
   // If no allowlist is configured, block programmatic first-admin creation
   // Admin must be manually assigned via Convex dashboard in this case
   if (!allowedEmails) {
     return false;
   }
-  
+
   if (!email) {
     return false;
   }
-  
+
   const allowedList = allowedEmails.split(",").map(e => e.trim().toLowerCase());
   return allowedList.includes(email.toLowerCase());
 }
@@ -53,7 +53,7 @@ export const makeUserAdmin = mutation({
           "Email not authorized for admin access. Contact the platform operator to be added to the admin allowlist."
         );
       }
-      
+
       await ctx.db.patch(args.userId, { role: "admin" as "admin" | "user" });
       return { success: true, message: "First admin created successfully!" };
     }
