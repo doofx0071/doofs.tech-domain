@@ -7,6 +7,8 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { AppRoutes } from "./AppRoutes";
 import { ConvexErrorBoundary } from "@/components/ConvexErrorBoundary";
+import { SplashScreen } from "@/components/SplashScreen";
+import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
 
@@ -20,18 +22,58 @@ console.error = function (...args: any[]) {
   originalError.apply(console, args);
 };
 
+function AppContent() {
+  const [showSplash, setShowSplash] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen the splash screen in this session
+    const hasSeenSplash = sessionStorage.getItem("hasSeenSplash");
+    if (!hasSeenSplash) {
+      setShowSplash(true);
+    }
+    setIsReady(true);
+  }, []);
+
+  const handleSplashComplete = () => {
+    sessionStorage.setItem("hasSeenSplash", "true");
+    setShowSplash(false);
+  };
+
+  if (!isReady) {
+    return null; // Prevent flash of content before checking
+  }
+
+  return (
+    <>
+      {showSplash && (
+        <SplashScreen
+          onComplete={handleSplashComplete}
+        />
+      )}
+      <div
+        className={`transition-opacity duration-500 ${
+          showSplash ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ConvexErrorBoundary>
+            <AppRoutes />
+          </ConvexErrorBoundary>
+        </BrowserRouter>
+      </div>
+    </>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ConvexClientProvider>
       <ThemeProvider>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ConvexErrorBoundary>
-              <AppRoutes />
-            </ConvexErrorBoundary>
-          </BrowserRouter>
+          <AppContent />
         </TooltipProvider>
       </ThemeProvider>
     </ConvexClientProvider>
