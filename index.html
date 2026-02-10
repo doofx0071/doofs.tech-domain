@@ -2,7 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    
+    <!-- PWA: Theme Color (Dynamic based on system preference) -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+    
+    <!-- PWA: Mobile Web App Capable -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="doofs" />
+    
+    <!-- PWA: Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- PWA: Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/pwa/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/pwa/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/pwa/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/pwa/icon-152x152.png" />
+    
+    <!-- PWA: Mask Icon for Safari Pinned Tab -->
+    <link rel="mask-icon" href="/pwa/mask-icon.svg" color="#0f172a" />
 
     <title>doofs | free domains for developers</title>
     <meta
@@ -13,6 +35,7 @@
 
     <link rel="canonical" href="https://domain.doofs.tech/" />
 
+    <!-- PWA: Dynamic Icons based on color scheme -->
     <link rel="icon" href="/doofs.tech-lightmode-logo.ico" media="(prefers-color-scheme: light)" />
     <link rel="icon" href="/doofs.tech-darkmode-logo.ico" media="(prefers-color-scheme: dark)" />
 

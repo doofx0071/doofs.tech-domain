@@ -8,6 +8,8 @@ import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { AppRoutes } from "./AppRoutes";
 import { ConvexErrorBoundary } from "@/components/ConvexErrorBoundary";
 import { SplashScreen } from "@/components/SplashScreen";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -33,6 +35,11 @@ function AppContent() {
       setShowSplash(true);
     }
     setIsReady(true);
+
+    // Log PWA status for debugging
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true;
+    console.log("[PWA] Running in standalone mode:", isStandalone);
   }, []);
 
   const handleSplashComplete = () => {
@@ -56,6 +63,10 @@ function AppContent() {
           showSplash ? "opacity-0" : "opacity-100"
         }`}
       >
+        {/* PWA Components */}
+        <PWAInstallPrompt delay={5000} maxPrompts={3} />
+        <PWAUpdatePrompt delay={2000} />
+        
         <Toaster />
         <Sonner />
         <BrowserRouter>
