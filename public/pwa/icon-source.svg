@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- White background for standard icons -->
+  <rect width="512" height="512" fill="white"/>
+  
+  <!-- Safe zone: content within 20% margin (approximately 82px margin on each side) -->
+  <!-- The 'd' logo centered with proper padding -->
+  <g transform="translate(106, 106) scale(0.586)">
+    <!-- Simplified pixelated 'd' logo design -->
+    <g fill="black">
+      <!-- Main vertical stem of 'd' -->
+      <rect x="60" y="40" width="60" height="300"/>
+      <!-- Top curve of 'd' -->
+      <rect x="120" y="40" width="120" height="60"/>
+      <!-- Right vertical of 'd' -->
+      <rect x="180" y="100" width="60" height="140"/>
+      <!-- Bottom curve of 'd' -->
+      <rect x="120" y="280" width="120" height="60"/>
+      <!-- Pixels extending from 'd' (the pixelated effect) -->
+      <rect x="240" y="160" width="40" height="40"/>
+      <rect x="280" y="120" width="40" height="40"/>
+      <rect x="280" y="200" width="40" height="40"/>
+      <rect x="320" y="80" width="40" height="40"/>
+      <rect x="320" y="240" width="40" height="40"/>
+    </g>
+  </g>
+</svg>

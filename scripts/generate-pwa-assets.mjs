@@ -50,8 +50,9 @@ if (!fs.existsSync(lightLogoPath)) {
       console.error(`❌ icon-${size}x${size}.png:`, e.message.split('\n')[0]);
     }
     
-    // Maskable icon - needs 20% safe zone padding for adaptive icons
-    const padding = Math.floor(size * 0.1); // 10% on each side = 20% total safe zone
+    // Maskable icon - needs MORE padding for circular/squircle masks
+    // 20% on each side ensures logo is fully visible in any mask shape
+    const padding = Math.floor(size * 0.2); // 20% on each side
     const contentSize = size - padding * 2;
     
     try {
