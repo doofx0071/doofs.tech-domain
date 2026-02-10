@@ -15,13 +15,14 @@ const colors = {
   primaryDark: '#2563eb',
 };
 
-const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+const iconSizes = [192, 512];
 const lightLogoPath = path.join(publicDir, 'doofs.tech-lightmode-logo.png');
+const darkLogoPath = path.join(publicDir, 'doofs.tech-darkmode-logo.png');
 
 console.log('🎨 Generating PWA Assets...\n');
 
 // Generate icons
-if (!fs.existsSync(lightLogoPath)) {
+if (!fs.existsSync(lightLogoPath) || !fs.existsSync(darkLogoPath)) {
   console.warn('Logo not found, creating gradient icons\n');
   
   for (const size of iconSizes) {
@@ -35,14 +36,24 @@ if (!fs.existsSync(lightLogoPath)) {
     }
   }
 } else {
-  console.log('Using source logo\n');
+  console.log('Using official doofs logos\n');
   
   for (const size of iconSizes) {
-    // Regular icon (any) - logo on white background, no extra padding
+    // Regular icon (any): black logo on white background with safe-zone padding.
+    const anyPadding = Math.floor(size * 0.14);
+    const anyContentSize = size - anyPadding * 2;
+
     try {
       await sharp(lightLogoPath)
-        .resize(size, size, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
-        .flatten({ background: { r: 255, g: 255, b: 255 } }) // Remove transparency, white bg
+        .resize(anyContentSize, anyContentSize, { fit: 'contain' })
+        .extend({
+          top: anyPadding,
+          bottom: anyPadding,
+          left: anyPadding,
+          right: anyPadding,
+          background: { r: 255, g: 255, b: 255, alpha: 1 },
+        })
+        .flatten({ background: { r: 255, g: 255, b: 255 } })
         .png()
         .toFile(path.join(pwaDir, `icon-${size}x${size}.png`));
       console.log(`✅ icon-${size}x${size}.png`);
@@ -50,16 +61,21 @@ if (!fs.existsSync(lightLogoPath)) {
       console.error(`❌ icon-${size}x${size}.png:`, e.message.split('\n')[0]);
     }
     
-    // Maskable icon - needs MORE padding for circular/squircle masks
-    // 20% on each side ensures logo is fully visible in any mask shape
-    const padding = Math.floor(size * 0.2); // 20% on each side
-    const contentSize = size - padding * 2;
+    // Maskable icon: white logo on black background with larger safe-zone padding.
+    const maskablePadding = Math.floor(size * 0.2);
+    const maskableContentSize = size - maskablePadding * 2;
     
     try {
-      await sharp(lightLogoPath)
-        .resize(contentSize, contentSize, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
-        .extend({ top: padding, bottom: padding, left: padding, right: padding, background: { r: 255, g: 255, b: 255, alpha: 1 } })
-        .flatten({ background: { r: 255, g: 255, b: 255 } })
+      await sharp(darkLogoPath)
+        .resize(maskableContentSize, maskableContentSize, { fit: 'contain' })
+        .extend({
+          top: maskablePadding,
+          bottom: maskablePadding,
+          left: maskablePadding,
+          right: maskablePadding,
+          background: { r: 0, g: 0, b: 0, alpha: 1 },
+        })
+        .flatten({ background: { r: 0, g: 0, b: 0 } })
         .png()
         .toFile(path.join(pwaDir, `icon-maskable-${size}x${size}.png`));
       console.log(`✅ icon-maskable-${size}x${size}.png`);
