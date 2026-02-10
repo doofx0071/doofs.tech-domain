@@ -23,4 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .venv
-venvdev-dist/
+dev-dist/
+
+# Project docs and scripts (internal use)
+md/
+scripts/
