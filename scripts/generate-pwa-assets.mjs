@@ -38,18 +38,32 @@ if (!fs.existsSync(lightLogoPath)) {
   console.log('Using source logo\n');
   
   for (const size of iconSizes) {
-    const padding = Math.floor(size * 0.2);
-    const contentSize = size - padding * 2;
-    
+    // Regular icon (any) - logo on white background, no extra padding
     try {
       await sharp(lightLogoPath)
-        .resize(contentSize, contentSize, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
-        .extend({ top: padding, bottom: padding, left: padding, right: padding, background: { r: 59, g: 130, b: 246, alpha: 1 } })
+        .resize(size, size, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
+        .flatten({ background: { r: 255, g: 255, b: 255 } }) // Remove transparency, white bg
         .png()
         .toFile(path.join(pwaDir, `icon-${size}x${size}.png`));
       console.log(`✅ icon-${size}x${size}.png`);
     } catch (e) {
       console.error(`❌ icon-${size}x${size}.png:`, e.message.split('\n')[0]);
+    }
+    
+    // Maskable icon - needs 20% safe zone padding for adaptive icons
+    const padding = Math.floor(size * 0.1); // 10% on each side = 20% total safe zone
+    const contentSize = size - padding * 2;
+    
+    try {
+      await sharp(lightLogoPath)
+        .resize(contentSize, contentSize, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
+        .extend({ top: padding, bottom: padding, left: padding, right: padding, background: { r: 255, g: 255, b: 255, alpha: 1 } })
+        .flatten({ background: { r: 255, g: 255, b: 255 } })
+        .png()
+        .toFile(path.join(pwaDir, `icon-maskable-${size}x${size}.png`));
+      console.log(`✅ icon-maskable-${size}x${size}.png`);
+    } catch (e) {
+      console.error(`❌ icon-maskable-${size}x${size}.png:`, e.message.split('\n')[0]);
     }
   }
 }

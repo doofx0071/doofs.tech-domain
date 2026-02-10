@@ -33,53 +33,31 @@ export default defineConfig(({ mode }) => ({
         scope: "/",
         start_url: "/",
         icons: [
-          {
-            src: "/pwa/icon-72x72.png",
-            sizes: "72x72",
-            type: "image/png",
-            purpose: "maskable any",
-          },
-          {
-            src: "/pwa/icon-96x96.png",
-            sizes: "96x96",
-            type: "image/png",
-            purpose: "maskable any",
-          },
-          {
-            src: "/pwa/icon-128x128.png",
-            sizes: "128x128",
-            type: "image/png",
-            purpose: "maskable any",
-          },
-          {
-            src: "/pwa/icon-144x144.png",
-            sizes: "144x144",
-            type: "image/png",
-            purpose: "maskable any",
-          },
-          {
-            src: "/pwa/icon-152x152.png",
-            sizes: "152x152",
-            type: "image/png",
-            purpose: "maskable any",
-          },
+          // Regular icons (any) - used for desktop, favicon, etc.
           {
             src: "/pwa/icon-192x192.png",
             sizes: "192x192",
             type: "image/png",
-            purpose: "maskable any",
-          },
-          {
-            src: "/pwa/icon-384x384.png",
-            sizes: "384x384",
-            type: "image/png",
-            purpose: "maskable any",
+            purpose: "any",
           },
           {
             src: "/pwa/icon-512x512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "maskable any",
+            purpose: "any",
+          },
+          // Maskable icons - used for Android adaptive icons (has safe zone padding)
+          {
+            src: "/pwa/icon-maskable-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable",
+          },
+          {
+            src: "/pwa/icon-maskable-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
           },
         ],
         screenshots: [
