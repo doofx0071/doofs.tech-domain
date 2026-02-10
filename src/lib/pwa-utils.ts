@@ -98,7 +98,7 @@ export function updateManifestTheme(theme: "light" | "dark"): void {
   const manifestLink = document.querySelector('link[rel="manifest"]');
   if (!manifestLink) return;
 
-  const currentHref = manifestLink.getAttribute("href") || "/manifest.json";
+  const currentHref = manifestLink.getAttribute("href") || "/manifest.webmanifest";
   
   // Add theme parameter to bust cache and apply theme
   const separator = currentHref.includes("?") ? "&" : "?";
