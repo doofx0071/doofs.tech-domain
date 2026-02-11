@@ -317,6 +317,16 @@ export const expirePendingTransfers = internalMutation({
                     message: `The transfer for ${transfer.toEmail} has expired and was cancelled.`,
                 });
 
+                // Audit log
+                const domain = await ctx.db.get(transfer.domainId);
+                await ctx.db.insert("auditLogs", {
+                    userId: transfer.fromUserId,
+                    action: "domain_transfer_expired",
+                    details: `Transfer of ${domain ? `${domain.subdomain}.${domain.rootDomain}` : "unknown domain"} to ${transfer.toEmail} expired`,
+                    timestamp: nowMs,
+                    status: "success",
+                });
+
                 expiredCount++;
             }
         }

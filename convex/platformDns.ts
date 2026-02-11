@@ -247,6 +247,14 @@ export const deleteRecordByProviderId = action({
             providerRecordId: args.providerRecordId
         });
 
+        // Audit log
+        await ctx.runMutation(internal.auditLogs.createAuditLog, {
+            userId,
+            action: "platform_dns_deleted_by_provider_id",
+            details: `Deleted DNS record from Cloudflare for ${platformDomain.domain} (provider ID: ${args.providerRecordId})`,
+            status: "success",
+        });
+
         return { success: true };
     },
 });
