@@ -55,13 +55,34 @@ export const makeUserAdmin = mutation({
       }
 
       await ctx.db.patch(args.userId, { role: "admin" as "admin" | "user" });
+
+      // Audit log for first admin creation
+      await ctx.db.insert("auditLogs", {
+        userId: args.userId,
+        action: "admin_created",
+        details: `First admin created: ${targetUser?.email || args.userId}`,
+        timestamp: Date.now(),
+        status: "success",
+      });
+
       return { success: true, message: "First admin created successfully!" };
     }
 
     // Otherwise, require authentication and admin role
-    await requireAdmin(ctx);
+    const { userId: currentUserId } = await requireAdmin(ctx);
 
+    const targetUser = await ctx.db.get(args.userId);
     await ctx.db.patch(args.userId, { role: "admin" as "admin" | "user" });
+
+    // Audit log for admin promotion
+    await ctx.db.insert("auditLogs", {
+      userId: currentUserId,
+      action: "user_promoted",
+      details: `Promoted user ${targetUser?.email || args.userId} to admin`,
+      timestamp: Date.now(),
+      status: "success",
+    });
+
     return { success: true, message: "User promoted to admin" };
   },
 });
