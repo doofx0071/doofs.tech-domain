@@ -161,11 +161,24 @@ export const updateSSLStatus = internalMutation({
         ),
     },
     handler: async (ctx, args) => {
+        const domain = await ctx.db.get(args.domainId);
+
         await ctx.db.patch(args.domainId, {
             sslStatus: args.sslStatus,
             sslCheckedAt: now(),
             updatedAt: now(),
         });
+
+        // Audit log (use domain owner as actor for system-initiated SSL updates)
+        if (domain?.userId) {
+            await ctx.db.insert("auditLogs", {
+                userId: domain.userId,
+                action: "domain_ssl_updated",
+                details: `SSL status updated to "${args.sslStatus}" for ${domain.subdomain}.${domain.rootDomain}`,
+                timestamp: now(),
+                status: "success",
+            });
+        }
     },
 });
 

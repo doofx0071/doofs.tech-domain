@@ -184,6 +184,14 @@ export const refreshStatus = action({
             status: zone.status
         });
 
+        // Audit log
+        await ctx.runMutation(internal.auditLogs.createAuditLog, {
+            userId,
+            action: "platform_domain_status_refreshed",
+            details: `Refreshed status for platform domain (zone: ${args.zoneId}). New status: ${zone.status}`,
+            status: "success",
+        });
+
         return { success: true, status: zone.status };
     },
 });

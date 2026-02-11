@@ -322,6 +322,19 @@ export const completeJob = internalMutation({
                     rootDomain: record.rootDomain,
                     adminDetails: JSON.stringify({ error: args.error, jobId: args.jobId, record })
                 });
+
+                // Audit log for DNS job failure
+                await ctx.db.insert("auditLogs", {
+                    userId: record.userId,
+                    action: "dns_job_failed",
+                    details: `DNS ${job.jobType} failed for ${record.fqdn}: ${args.error || "Unknown error"}`,
+                    metadata: {
+                        oldValue: JSON.stringify({ jobId: args.jobId, jobType: job.jobType }),
+                        newValue: args.error || "Unknown error",
+                    },
+                    timestamp: now(),
+                    status: "failed",
+                });
             }
         }
     }
