@@ -226,6 +226,15 @@ export const initializeSettings = internalMutation({
             updatedBy: args.adminUserId,
         });
 
+        // Audit log
+        await ctx.db.insert("auditLogs", {
+            userId: args.adminUserId,
+            action: "settings_initialized",
+            details: "Platform settings initialized with defaults",
+            timestamp: Date.now(),
+            status: "success",
+        });
+
         return settingsId;
     },
 });

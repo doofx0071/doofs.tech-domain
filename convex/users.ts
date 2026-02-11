@@ -1,7 +1,7 @@
 import { query, mutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { auth } from "./auth";
-import { requireUserId } from "./lib";
+import { requireUserId, now } from "./lib";
 
 
 export const currentUser = query({
@@ -48,6 +48,15 @@ export const completeOnboarding = mutation({
     await ctx.scheduler.runAfter(0, internal.emailService.notifyAdmin, {
       subject: "New User Registration",
       message: `A new user has completed onboarding.\nUser ID: ${userId}`
+    });
+
+    // Audit log
+    await ctx.db.insert("auditLogs", {
+      userId,
+      action: "onboarding_completed",
+      details: `User completed onboarding`,
+      timestamp: now(),
+      status: "success",
     });
   },
 });
